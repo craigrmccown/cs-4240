@@ -105,7 +105,7 @@ type_declaration_list
     ;
 
 var_declaration_list
-    : var_declaraion var_declaration_list
+    : var_declaration var_declaration_list
     |
     ;
 
@@ -115,8 +115,8 @@ type_declaration
 
 type
     : base_type
-    | array OPENBRACKET INTLIT CLOSEBRACKET OF base_type
-    | array OPENBRACKET INTLIT CLOSEBRACKET OPENBRACKET INTLIT CLOSEBRACKET OF base_type
+    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET OF base_type
+    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET OPENBRACKET INTLIT CLOSEBRACKET OF base_type
     ;
 
 type_id
@@ -130,7 +130,7 @@ base_type
     ;
 
 var_declaration
-    : var id_list COLON type_id optional_init SEMICOLON
+    : VAR id_list COLON type_id optional_init SEMICOLON
     ;
 
 id_list
@@ -149,11 +149,11 @@ stat_seq
     ;
 
 stat
-    : value COLON EQUALS expr SEMICOLON
+    : value ASSIGNMENT_OP expr SEMICOLON
     | IF expr THEN stat_seq ENDIF SEMICOLON
     | IF expr THEN stat_seq ELSE stat_seq ENDIF SEMICOLON
     | WHILE expr DO stat_seq ENDDO SEMICOLON
-    | FOR ID COLON EQUALS index_expr TO index_expr DO stat_seq ENDDO SEMICOLON
+    | FOR ID ASSIGNMENT_OP index_expr TO index_expr DO stat_seq ENDDO SEMICOLON
     | opt_prefix ID OPENPAREN expr_list CLOSEPAREN SEMICOLON
     | BREAK SEMICOLON
     | RETURN expr SEMICOLON
@@ -161,6 +161,6 @@ stat
     ;
 
 opt_prefix
-    : value COLON EQUALS
+    : value ASSIGNMENT_OP
     |
     ;
