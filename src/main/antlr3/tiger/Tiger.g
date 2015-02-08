@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 grammar Tiger
 
 tokens {
@@ -112,3 +113,56 @@ var_declaration_list
 type_declaration
 	: TYPE ID EQUALS type SEMICOLON
 	;
+=======
+type
+    : base_type
+    | array OPENBRACKET INTLIT CLOSEBRACKET OF base_type
+    | array OPENBRACKET INTLIT CLOSEBRACKET OPENBRACKET INTLIT CLOSEBRACKET OF base_type
+    ;
+
+type_id
+    : base_type
+    | ID
+    ;
+
+base_type
+    : INT
+    | FIXEDPT
+    ;
+
+var_declaration
+    : var id_list COLON type_id optional_init SEMICOLON
+    ;
+
+id_list
+    : ID
+    | ID COMMA id_list
+    ;
+
+optional_init
+    : const
+    |
+    ;
+
+stat_seq
+    : stat
+    | stat stat_seq
+    ;
+
+stat
+    : value COLON EQUALS expr SEMICOLON
+    | IF expr THEN stat_seq ENDIF SEMICOLON
+    | IF expr THEN stat_seq ELSE stat_seq ENDIF SEMICOLON
+    | WHILE expr DO stat_seq ENDDO SEMICOLON
+    | FOR ID COLON EQUALS index_expr TO index_expr DO stat_seq ENDDO SEMICOLON
+    | opt_prefix ID OPENPAREN expr_list CLOSEPAREN SEMICOLON
+    | BREAK SEMICOLON
+    | RETURN expr SEMICOLON
+    | block
+    ;
+
+opt_prefix
+    : value COLON EQUALS
+    |
+    ;
+>>>>>>> Stashed changes
