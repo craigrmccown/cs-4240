@@ -45,6 +45,31 @@ tokens {
     ASSIGNMENT_OP = ':=';
 }
 
+ID
+    : ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
+    ;
+
+INTLIT
+    : ('1'..'9')('0'..'9')*
+    ;
+
+FIXEDPTLIT
+    : ('0'|('1'..'9')('0'..'9')*)'.'('0'..'9')+
+    ;
+
+COMMENT
+    : '/*'.*'*/'
+    { skip() }
+    ;
+
+WS
+    : ' '
+    | '\t'
+    | '\r'
+    | '\n'
+    { skip() }
+    ;
+
 tiger_program
     : type_declaration_list funct_declaration_list main_function
     ;
