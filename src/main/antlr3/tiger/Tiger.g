@@ -190,61 +190,61 @@ opt_prefix
     |
     ;
 
-    expr
-	: const
-	| value
-	| expr binary_operator expr
-	| OPENPAREN expr CLOSEPAREN
-	;
+expr
+    : const
+    | value
+    | expr binary_operator expr
+    | OPENPAREN expr CLOSEPAREN
+    ;
 
 const
-	: INTLIT
-	| FIXEDPTLIT
-	;
+    : INTLIT
+    | FIXEDPTLIT
+    ;
 
 binary_operator
-	: PLUS
-	| MINUS
-	| MULTIPLY
-	| DIVIDE
-	| EQUALS
-	| NOT_EQUAL
-	| LESS_THAN
-	| LESS_THAN_EQUAL
-	| GREATER_THAN
-	| GREATER_THAN_EQUAL
-	| BIT_AND
-	| BIT_OR
-	;
+    : PLUS
+    | MINUS
+    | MULTIPLY
+    | DIVIDE
+    | EQUALS
+    | NOT_EQUAL
+    | LESS_THAN
+    | LESS_THAN_EQUAL
+    | GREATER_THAN
+    | GREATER_THAN_EQUAL
+    | BIT_AND
+    | BIT_OR
+    ;
 
 expr_list
-	: expr expr_list_tail
-	|
-	;
+    : expr expr_list_tail
+    |
+    ;
 
 expr_list_tail
-	: expr expr_list_tail
-	|
-	;
+    : expr expr_list_tail
+    |
+    ;
 
 value
-	: ID value_tail
-	;
+    : ID value_tail
+    ;
 
 value_tail
-	: OPENBRACKET index_expr CLOSEBRACKET
-	| OPENBRACKET index_expr CLOSEBRACKET OPENBRACKET index_expr CLOSEBRACKET
-	|
-	;
+    : OPENBRACKET index_expr CLOSEBRACKET
+    | OPENBRACKET index_expr CLOSEBRACKET OPENBRACKET index_expr CLOSEBRACKET
+    |
+    ;
 
 index_expr
-	: INTLIT
-	| ID
-	| index_expr index_oper index_expr
-	;
+    : INTLIT
+    | ID
+    | index_expr index_oper index_expr
+    ;
 
 index_oper
-	: PLUS
-	| MINUS
-	| MULTIPLY
-	;
+    : PLUS
+    | MINUS
+    | MULTIPLY
+    ;
