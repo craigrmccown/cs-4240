@@ -119,8 +119,7 @@ block
     ;
 
 declaration_segment
-    : type_declaration_list
-    | var_declaration_list
+    : type_declaration_list var_declaration_list
     ;
 
 type_declaration_list
@@ -139,8 +138,12 @@ type_declaration
 
 type
     : base_type
-    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET OF base_type
-    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET OPENBRACKET INTLIT CLOSEBRACKET OF base_type
+    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET type_end OF base_type
+    ;
+
+type_end
+    : OPENBRACKET INTLIT CLOSEBRACKET
+    |
     ;
 
 type_id
@@ -158,8 +161,12 @@ var_declaration
     ;
 
 id_list
-    : ID
-    | ID COMMA id_list
+    : ID id_list_tail
+    ;
+
+id_list_tail
+    : COMMA id_list
+    |
     ;
 
 optional_init
@@ -168,25 +175,33 @@ optional_init
     ;
 
 stat_seq
-    : stat
-    | stat stat_seq
+    : stat stat_seq_tail
+    ;
+
+stat_seq_tail
+    : stat stat_seq_tail
+    |
     ;
 
 stat
-    : value ASSIGNMENT_OP expr SEMICOLON
-    | IF expr THEN stat_seq ENDIF SEMICOLON
-    | IF expr THEN stat_seq ELSE stat_seq ENDIF SEMICOLON
+    : value ASSIGNMENT_OP stat_expr SEMICOLON
+    | IF expr THEN stat_seq stat_else ENDIF SEMICOLON
     | WHILE expr DO stat_seq ENDDO SEMICOLON
     | FOR ID ASSIGNMENT_OP index_expr TO index_expr DO stat_seq ENDDO SEMICOLON
-    | opt_prefix ID OPENPAREN expr_list CLOSEPAREN SEMICOLON
+    | ID OPENPAREN expr_list CLOSEPAREN SEMICOLON
     | BREAK SEMICOLON
     | RETURN expr SEMICOLON
     | block
     ;
 
-opt_prefix
-    : value ASSIGNMENT_OP
+stat_else
+    : ELSE stat_seq
     |
+    ;
+
+stat_expr
+    : expr
+    | ID OPENPAREN expr_list CLOSEPAREN
     ;
 
 expr
@@ -275,8 +290,12 @@ value
     ;
 
 value_tail
+    : OPENBRACKET index_expr CLOSEBRACKET value_tail_end
+    |
+    ;
+
+value_tail_end
     : OPENBRACKET index_expr CLOSEBRACKET
-    | OPENBRACKET index_expr CLOSEBRACKET OPENBRACKET index_expr CLOSEBRACKET
     |
     ;
 
@@ -291,13 +310,11 @@ index_expr_tail
     ;
 
 index_expr_2
-    : MULTIPLY index_expr
-    | value
-    | constant
+    : value index_expr_2_tail
+    | constant index_expr_2_tail
     ;
 
-index_oper
-    : PLUS
-    | MINUS
-    | MULTIPLY
+index_expr_2_tail
+    : MULTIPLY index_expr_2
+    |
     ;
