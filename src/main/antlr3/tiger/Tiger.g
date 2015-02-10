@@ -191,11 +191,55 @@ opt_prefix
     ;
 
 expr
-    : const
-    | value
-    | expr binary_operator expr
-    | OPENPAREN expr CLOSEPAREN
+    : expr_2 expr_tail
     ;
+
+expr_tail
+    : BIT_AND expr
+    | BIT_OR expr
+    |
+    ;
+
+expr_2
+    : expr3 expr_tail_2
+    ;
+
+expr_tail_2
+    : EQUALS expr_2
+    | NOT_EQUAL expr_2
+    | LESS_THAN expr_2
+    | GREATER_THAN expr_2
+    | LESS_THAN_EQUAL expr_2
+    | GREATER_THAN_EQUAL expr_2
+    |
+    ;
+
+expr_3
+    : expr_4 expr_tail_3
+    ;
+
+expr_tail_3
+    : PLUS expr_3
+    | MINUS expr_3
+    |
+    ;
+
+expr_4
+    : expr_5 expr_tail_4
+    ;
+
+expr_tail_4
+    : MULTIPLY expr_4
+    | DIVIDE expr_4
+    |
+    ;
+
+expr_5
+    : OPENPAREN expr CLOSEPAREN
+    | VALUE
+    | CONST
+    ;
+
 
 const
     : INTLIT
@@ -238,9 +282,19 @@ value_tail
     ;
 
 index_expr
-    : INTLIT
-    | ID
-    | index_expr index_oper index_expr
+    : index_expr_2 index_expr_tail
+    ;
+
+index_expr_tail
+    : PLUS index_expr
+    | MINUS index_expr
+    |
+    ;
+
+index_expr_2
+    : MULTIPLY index_expr
+    | VALUE
+    | CONST
     ;
 
 index_oper
