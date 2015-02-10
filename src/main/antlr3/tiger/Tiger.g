@@ -1,4 +1,4 @@
-grammar Tiger
+grammar Tiger;
 
 tokens {
     FUNCTION = 'function';
@@ -10,7 +10,7 @@ tokens {
     ARRAY = 'array';
     OF = 'of';
     INT = 'int';
-    FIXEDPT = 'fixedpt';
+    FIXEDPTLIT = 'fixedpt';
     VAR = 'var';
     IF = 'if';
     THEN = 'then';
@@ -59,7 +59,7 @@ FIXEDPTLIT
 
 COMMENT
     : '/*'.*'*/'
-    { skip() }
+    { skip(); }
     ;
 
 WS
@@ -67,7 +67,7 @@ WS
     | '\t'
     | '\r'
     | '\n'
-    { skip() }
+    { skip(); }
     ;
 
 tiger_program
@@ -151,7 +151,7 @@ type_id
 
 base_type
     : INT
-    | FIXEDPT
+    | FIXEDPTLIT
     ;
 
 var_declaration
