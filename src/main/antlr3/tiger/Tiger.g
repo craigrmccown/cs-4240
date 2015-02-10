@@ -10,7 +10,6 @@ tokens {
     ARRAY = 'array';
     OF = 'of';
     INT = 'int';
-    FIXEDPTLIT = 'fixedpt';
     VAR = 'var';
     IF = 'if';
     THEN = 'then';
@@ -164,7 +163,7 @@ id_list
     ;
 
 optional_init
-    : const
+    : constant
     |
     ;
 
@@ -201,7 +200,7 @@ expr_tail
     ;
 
 expr_2
-    : expr3 expr_tail_2
+    : expr_3 expr_tail_2
     ;
 
 expr_tail_2
@@ -236,12 +235,12 @@ expr_tail_4
 
 expr_5
     : OPENPAREN expr CLOSEPAREN
-    | VALUE
-    | CONST
+    | value
+    | constant
     ;
 
 
-const
+constant
     : INTLIT
     | FIXEDPTLIT
     ;
@@ -293,8 +292,8 @@ index_expr_tail
 
 index_expr_2
     : MULTIPLY index_expr
-    | VALUE
-    | CONST
+    | value
+    | constant
     ;
 
 index_oper
