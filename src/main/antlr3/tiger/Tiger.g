@@ -1,5 +1,9 @@
 grammar Tiger;
 
+options {
+    k = 1;
+}
+
 tokens {
     FUNCTION = 'function';
     BEGIN = 'begin';
@@ -44,12 +48,26 @@ tokens {
     ASSIGNMENT_OP = ':=';
 }
 
+@parser::members {
+    @Override
+    public void reportError(RecognitionException e) {
+        throw new RuntimeException("parsing error on line " + e.line + " at " + e.token.getText());
+    }
+}
+
+@lexer::members {
+    @Override
+    public void reportError(RecognitionException e) {
+        throw new RuntimeException("lexing error on line " + e.line + " at " + e.token.getText());
+    }
+}
+
 ID
     : ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
     ;
 
 INTLIT
-    : ('1'..'9')('0'..'9')*
+    : '0' | ('1'..'9')('0'..'9')*
     ;
 
 FIXEDPTLIT
@@ -62,33 +80,30 @@ COMMENT
     ;
 
 WS
-    : ' '
-    | '\t'
-    | '\r'
-    | '\n'
+    : (' '|'\t'|'\f'|'\n'|'\r')+
     { skip(); }
     ;
 
 tiger_program
-    : type_declaration_list funct_declaration_list main_function
+    : type_declaration_list funct_declaration_list
     ;
 
 funct_declaration_list
-    : funct_declaration funct_declaration_list
-    |
+    : type_id non_void_funct_declaration funct_declaration_list
+    | VOID void_funct_declaration
     ;
     
+non_void_funct_declaration
+    : type_id FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON
+    ;
+
+void_funct_declaration
+    : FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON funct_declaration_list
+    | MAIN OPENPAREN CLOSEPAREN BEGIN block_list END SEMICOLON
+    ;
+
 funct_declaration
-    : ret_type FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON
-    ;
-
-main_function
-    : VOID MAIN OPENPAREN CLOSEPAREN BEGIN block_list END SEMICOLON
-    ;
-
-ret_type
-    : VOID
-    | type_id
+    : FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON
     ;
 
 param_list
@@ -170,7 +185,7 @@ id_list_tail
     ;
 
 optional_init
-    : constant
+    : ASSIGNMENT_OP constant
     |
     ;
 
@@ -184,11 +199,10 @@ stat_seq_tail
     ;
 
 stat
-    : value ASSIGNMENT_OP stat_expr SEMICOLON
+    : ID funct_call_or_assignment SEMICOLON
     | IF expr THEN stat_seq stat_else ENDIF SEMICOLON
     | WHILE expr DO stat_seq ENDDO SEMICOLON
     | FOR ID ASSIGNMENT_OP index_expr TO index_expr DO stat_seq ENDDO SEMICOLON
-    | ID OPENPAREN expr_list CLOSEPAREN SEMICOLON
     | BREAK SEMICOLON
     | RETURN expr SEMICOLON
     | block
@@ -199,10 +213,22 @@ stat_else
     |
     ;
 
-stat_expr
-    : expr
-    | ID OPENPAREN expr_list CLOSEPAREN
+funct_call_or_assignment
+    : OPENPAREN expr_list CLOSEPAREN
+    | value_index ASSIGNMENT_OP stat_expr
     ;
+
+stat_expr
+    : ID funct_call_or_v_expr
+    | nv_expr
+    ;
+
+funct_call_or_v_expr
+    : OPENPAREN expr_list CLOSEPAREN
+    | v_expr
+    ;
+
+/* stand-alone expression */
 
 expr
     : expr_2 expr_tail
@@ -254,25 +280,50 @@ expr_5
     | constant
     ;
 
+/* value expression */
+
+v_expr
+    : v_expr_2 expr_tail
+    ;
+
+v_expr_2
+    : v_expr_3 expr_tail_2
+    ;
+
+v_expr_3
+    : v_expr_4 expr_tail_3
+    ;
+
+v_expr_4
+    : value_index expr_tail_4
+    ;
+
+/* non-value expression */
+
+nv_expr
+    : nv_expr_2 expr_tail
+    ;
+
+nv_expr_2
+    : nv_expr_3 expr_tail_2
+    ;
+
+nv_expr_3
+    : nv_expr_4 expr_tail_3
+    ;
+
+nv_expr_4
+    : nv_expr_5 expr_tail_4
+    ;
+
+nv_expr_5
+    : OPENPAREN expr CLOSEPAREN
+    | constant
+    ;
 
 constant
     : INTLIT
     | FIXEDPTLIT
-    ;
-
-binary_operator
-    : PLUS
-    | MINUS
-    | MULTIPLY
-    | DIVIDE
-    | EQUALS
-    | NOT_EQUAL
-    | LESS_THAN
-    | LESS_THAN_EQUAL
-    | GREATER_THAN
-    | GREATER_THAN_EQUAL
-    | BIT_AND
-    | BIT_OR
     ;
 
 expr_list
@@ -286,15 +337,15 @@ expr_list_tail
     ;
 
 value
-    : ID value_tail
+    : ID value_index
     ;
 
-value_tail
-    : OPENBRACKET index_expr CLOSEBRACKET value_tail_end
+value_index
+    : OPENBRACKET index_expr CLOSEBRACKET value_index_2
     |
     ;
 
-value_tail_end
+value_index_2
     : OPENBRACKET index_expr CLOSEBRACKET
     |
     ;

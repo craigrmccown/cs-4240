@@ -1,4 +1,4 @@
-main()
+void main()
 begin
     begin
         type ArrayInt = array [100] of int; /*Declare ArrayInt as a new type */
@@ -7,7 +7,7 @@ begin
         begin
             for i := 1 to 100 do /* for loop for dot product */
                 sum := sum + X[i] * Y[i];
-            enddo
+            enddo;
             printi(sum); /* library call to printi to print the dot product */
         end;
     end;
