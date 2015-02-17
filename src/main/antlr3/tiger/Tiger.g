@@ -14,6 +14,7 @@ tokens {
     ARRAY = 'array';
     OF = 'of';
     INT = 'int';
+    FIXEDPT = 'fixedpt';
     VAR = 'var';
     IF = 'if';
     THEN = 'then';
@@ -47,7 +48,7 @@ tokens {
     BIT_OR = '|';
     ASSIGNMENT_OP = ':=';
 }
-
+/*
 @parser::members {
     @Override
     public void reportError(RecognitionException e) {
@@ -61,6 +62,7 @@ tokens {
         throw new RuntimeException("lexing error on line " + e.line + " at " + e.token.getText());
     }
 }
+*/
 
 ID
     : ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
@@ -94,7 +96,7 @@ funct_declaration_list
     ;
     
 non_void_funct_declaration
-    : type_id FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON
+    : FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON
     ;
 
 void_funct_declaration
@@ -168,7 +170,7 @@ type_id
 
 base_type
     : INT
-    | FIXEDPTLIT
+    | FIXEDPT
     ;
 
 var_declaration
@@ -332,7 +334,7 @@ expr_list
     ;
 
 expr_list_tail
-    : expr expr_list_tail
+    : COMMA expr expr_list_tail
     |
     ;
 
