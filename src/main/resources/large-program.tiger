@@ -38,6 +38,16 @@ begin
     end;
 end;
 
+void function no_params()
+begin
+    begin
+        print(0);
+    end;
+    begin
+        print(1);
+    end;
+end;
+
 /* multiplies 3x3 matrices */
 Table function mat_mult(m1: Matrix, m2: Matrix)
 begin

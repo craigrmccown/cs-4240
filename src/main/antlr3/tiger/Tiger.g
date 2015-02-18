@@ -2,6 +2,7 @@ grammar Tiger;
 
 options {
     k = 1;
+    output = AST;
 }
 
 tokens {
@@ -47,22 +48,10 @@ tokens {
     BIT_AND = '&';
     BIT_OR = '|';
     ASSIGNMENT_OP = ':=';
+    PROGRAM;
+    PARAMS;
+    BLOCK;
 }
-/*
-@parser::members {
-    @Override
-    public void reportError(RecognitionException e) {
-        throw new RuntimeException("parsing error on line " + e.line + " at " + e.token.getText());
-    }
-}
-
-@lexer::members {
-    @Override
-    public void reportError(RecognitionException e) {
-        throw new RuntimeException("lexing error on line " + e.line + " at " + e.token.getText());
-    }
-}
-*/
 
 ID
     : ('a'..'z'|'A'..'Z') ('a'..'z'|'A'..'Z'|'0'..'9'|'_')*
@@ -87,39 +76,41 @@ WS
     ;
 
 tiger_program
-    : type_declaration_list funct_declaration_list
+    : type_declaration_list funct_declaration_list -> ^(PROGRAM type_declaration_list funct_declaration_list)
     ;
 
 funct_declaration_list
-    : type_id non_void_funct_declaration funct_declaration_list
-    | VOID void_funct_declaration
+    : ret_type=INT! funct_declaration[$ret_type] funct_declaration_list
+    | ret_type=FIXEDPT! funct_declaration[$ret_type] funct_declaration_list
+    | ret_type=ID! funct_declaration[$ret_type] funct_declaration_list
+    | VOID! void_funct_or_main
     ;
-    
-non_void_funct_declaration
-    : FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON
+
+funct_declaration[Token ret_type]
+    : FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON -> ^(FUNCTION {new CommonTree($ret_type)} ID param_list? block_list)
+    ;
+
+void_funct_or_main
+    : void_funct_declaration funct_declaration_list
+    | MAIN OPENPAREN CLOSEPAREN BEGIN block_list END SEMICOLON -> ^(MAIN VOID block_list)
     ;
 
 void_funct_declaration
-    : FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON funct_declaration_list
-    | MAIN OPENPAREN CLOSEPAREN BEGIN block_list END SEMICOLON
-    ;
-
-funct_declaration
-    : FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON
+    : FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON -> ^(FUNCTION VOID ID param_list? block_list)
     ;
 
 param_list
-    : param param_list_tail
+    : param param_list_tail -> ^(PARAMS param param_list_tail?)
     |
     ;
 
 param_list_tail
-    : COMMA param param_list_tail
+    : COMMA! param param_list_tail
     |
     ;
 
 param
-    : ID COLON type_id
+    : ID COLON type_id -> ^(ID type_id)
     ;
 
 block_list
@@ -132,7 +123,7 @@ block_tail
     ;
 
 block
-    : BEGIN declaration_segment stat_seq END SEMICOLON
+    : BEGIN declaration_segment stat_seq END SEMICOLON -> ^(BLOCK declaration_segment? stat_seq)
     ;
 
 declaration_segment
@@ -150,16 +141,20 @@ var_declaration_list
     ;
 
 type_declaration
-    : TYPE ID EQUALS type SEMICOLON
+    : named_type EQUALS type SEMICOLON -> ^(EQUALS named_type type)
+    ;
+
+named_type
+    : TYPE ID -> ^(TYPE ID)
     ;
 
 type
     : base_type
-    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET type_end OF base_type
+    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET type_end OF base_type -> ^(OF ^(ARRAY INTLIT type_end?) base_type)
     ;
 
 type_end
-    : OPENBRACKET INTLIT CLOSEBRACKET
+    : OPENBRACKET! INTLIT CLOSEBRACKET!
     |
     ;
 
@@ -174,7 +169,7 @@ base_type
     ;
 
 var_declaration
-    : VAR id_list COLON type_id optional_init SEMICOLON
+    : VAR id_list COLON type_id optional_init SEMICOLON -> ^(VAR id_list type_id optional_init?)
     ;
 
 id_list
@@ -182,12 +177,12 @@ id_list
     ;
 
 id_list_tail
-    : COMMA id_list
+    : COMMA! id_list
     |
     ;
 
 optional_init
-    : ASSIGNMENT_OP constant
+    : ASSIGNMENT_OP constant -> ^(ASSIGNMENT_OP constant)
     |
     ;
 
@@ -201,23 +196,27 @@ stat_seq_tail
     ;
 
 stat
-    : ID funct_call_or_assignment SEMICOLON
-    | IF expr THEN stat_seq stat_else ENDIF SEMICOLON
-    | WHILE expr DO stat_seq ENDDO SEMICOLON
-    | FOR ID ASSIGNMENT_OP index_expr TO index_expr DO stat_seq ENDDO SEMICOLON
+    : id=ID! funct_call_or_assignment[$id] SEMICOLON!
+    | IF expr THEN stat_seq stat_else ENDIF SEMICOLON -> ^(IF expr ^(THEN stat_seq) stat_else?)
+    | WHILE expr DO stat_seq ENDDO SEMICOLON -> ^(WHILE expr ^(DO stat_seq))
+    | FOR ID ASSIGNMENT_OP index_expr TO index_expr DO stat_seq ENDDO SEMICOLON -> ^(FOR ^(TO ^(ASSIGNMENT_OP ID index_expr) index_expr) ^(DO stat_seq))
     | BREAK SEMICOLON
-    | RETURN expr SEMICOLON
+    | RETURN expr SEMICOLON -> ^(RETURN expr)
     | block
     ;
 
 stat_else
-    : ELSE stat_seq
+    : ELSE stat_seq -> ^(ELSE stat_seq)
     |
     ;
 
-funct_call_or_assignment
-    : OPENPAREN expr_list CLOSEPAREN
-    | value_index ASSIGNMENT_OP stat_expr
+funct_call_or_assignment[Token id]
+    : OPENPAREN expr_list CLOSEPAREN -> ^({new CommonTree($id)} expr_list)
+    | assignment_index[$id] ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP assignment_index stat_expr)
+    ;
+
+assignment_index[Token id]
+    : value_index -> ^({new CommonTree($id)} value_index?)
     ;
 
 stat_expr
@@ -237,8 +236,8 @@ expr
     ;
 
 expr_tail
-    : BIT_AND expr
-    | BIT_OR expr
+    : BIT_AND expr -> ^(BIT_AND expr)
+    | BIT_OR expr -> ^(BIT_OR expr)
     |
     ;
 
@@ -247,12 +246,12 @@ expr_2
     ;
 
 expr_tail_2
-    : EQUALS expr_2
-    | NOT_EQUAL expr_2
-    | LESS_THAN expr_2
-    | GREATER_THAN expr_2
-    | LESS_THAN_EQUAL expr_2
-    | GREATER_THAN_EQUAL expr_2
+    : EQUALS expr_2 -> ^(EQUALS expr_2)
+    | NOT_EQUAL expr_2 -> ^(NOT_EQUAL expr_2)
+    | LESS_THAN expr_2 -> ^(LESS_THAN expr_2)
+    | GREATER_THAN expr_2 -> ^(GREATER_THAN expr_2)
+    | LESS_THAN_EQUAL expr_2 -> ^(LESS_THAN_EQUAL expr_2)
+    | GREATER_THAN_EQUAL expr_2 -> ^(GREATER_THAN_EQUAL expr_2)
     |
     ;
 
@@ -261,8 +260,8 @@ expr_3
     ;
 
 expr_tail_3
-    : PLUS expr_3
-    | MINUS expr_3
+    : PLUS expr_3 -> ^(PLUS expr_3)
+    | MINUS expr_3 -> ^(MINUS expr_3)
     |
     ;
 
@@ -271,18 +270,16 @@ expr_4
     ;
 
 expr_tail_4
-    : MULTIPLY expr_4
-    | DIVIDE expr_4
+    : MULTIPLY expr_4 -> ^(MULTIPLY expr_4)
+    | DIVIDE expr_4 -> ^(DIVIDE expr_4)
     |
     ;
 
 expr_5
-    : OPENPAREN expr CLOSEPAREN
+    : OPENPAREN! expr CLOSEPAREN!
     | value
     | constant
     ;
-
-/* value expression */
 
 v_expr
     : v_expr_2 expr_tail
@@ -299,8 +296,6 @@ v_expr_3
 v_expr_4
     : value_index expr_tail_4
     ;
-
-/* non-value expression */
 
 nv_expr
     : nv_expr_2 expr_tail
@@ -343,12 +338,12 @@ value
     ;
 
 value_index
-    : OPENBRACKET index_expr CLOSEBRACKET value_index_2
+    : OPENBRACKET! index_expr CLOSEBRACKET! value_index_2
     |
     ;
 
 value_index_2
-    : OPENBRACKET index_expr CLOSEBRACKET
+    : OPENBRACKET! index_expr CLOSEBRACKET!
     |
     ;
 
