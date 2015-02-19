@@ -3,6 +3,7 @@ grammar Tiger;
 options {
     k = 1;
     output = AST;
+    ASTLabelType=CommonTree;
 }
 
 tokens {
@@ -212,7 +213,7 @@ stat_else
 
 funct_call_or_assignment[Token id]
     : OPENPAREN expr_list CLOSEPAREN -> ^({new CommonTree($id)} expr_list)
-    | assignment_index[$id] ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP assignment_index stat_expr)
+    | assignment_index[$id] ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP assignment_index stat_expr?)
     ;
 
 assignment_index[Token id]
@@ -220,12 +221,12 @@ assignment_index[Token id]
     ;
 
 stat_expr
-    : ID funct_call_or_v_expr
+    : id=ID! funct_call_or_v_expr[$id]
     | nv_expr
     ;
 
-funct_call_or_v_expr
-    : OPENPAREN expr_list CLOSEPAREN
+funct_call_or_v_expr[Token id]
+    : OPENPAREN expr_list CLOSEPAREN -> ^({new CommonTree($id)} expr_list?)
     | v_expr
     ;
 
@@ -282,7 +283,7 @@ expr_5
     ;
 
 v_expr
-    : v_expr_2 expr_tail
+    : v_expr_2! expr_tail
     ;
 
 v_expr_2
@@ -298,7 +299,7 @@ v_expr_4
     ;
 
 nv_expr
-    : nv_expr_2 expr_tail
+    : nv_expr_2! expr_tail
     ;
 
 nv_expr_2
@@ -329,7 +330,7 @@ expr_list
     ;
 
 expr_list_tail
-    : COMMA expr expr_list_tail
+    : COMMA! expr expr_list_tail
     |
     ;
 
@@ -348,21 +349,21 @@ value_index_2
     ;
 
 index_expr
-    : index_expr_2 index_expr_tail
+    : index_expr_2! index_expr_tail[$index_expr_2.tree]
     ;
 
-index_expr_tail
-    : PLUS index_expr
-    | MINUS index_expr
+index_expr_tail[CommonTree assignee]
+    : PLUS index_expr -> ^(PLUS {$assignee} index_expr)
+    | MINUS index_expr -> ^(MINUS {$assignee} index_expr)
     |
     ;
 
 index_expr_2
-    : value index_expr_2_tail
-    | constant index_expr_2_tail
+    : value! index_expr_2_tail[$value.tree]
+    | constant! index_expr_2_tail[$constant.tree]
     ;
 
-index_expr_2_tail
-    : MULTIPLY index_expr_2
+index_expr_2_tail[CommonTree assignee]
+    : MULTIPLY index_expr_2 -> ^(MULTIPLY {$assignee} index_expr_2)
     |
     ;
