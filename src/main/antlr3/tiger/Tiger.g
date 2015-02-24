@@ -233,89 +233,85 @@ funct_call_or_v_expr[Token id]
 /* stand-alone expression */
 
 expr
-    : expr_2 expr_tail
+    : expr_2 (bit_operator^ expr_2)*
     ;
 
-expr_tail
-    : BIT_AND expr -> ^(BIT_AND expr)
-    | BIT_OR expr -> ^(BIT_OR expr)
-    |
+bit_operator
+    : BIT_AND
+    | BIT_OR
     ;
 
 expr_2
-    : expr_3 expr_tail_2
+    : expr_3 (compare_operator^ expr_3)*
     ;
 
-expr_tail_2
-    : EQUALS expr_2 -> ^(EQUALS expr_2)
-    | NOT_EQUAL expr_2 -> ^(NOT_EQUAL expr_2)
-    | LESS_THAN expr_2 -> ^(LESS_THAN expr_2)
-    | GREATER_THAN expr_2 -> ^(GREATER_THAN expr_2)
-    | LESS_THAN_EQUAL expr_2 -> ^(LESS_THAN_EQUAL expr_2)
-    | GREATER_THAN_EQUAL expr_2 -> ^(GREATER_THAN_EQUAL expr_2)
-    |
+compare_operator
+    : EQUALS
+    | NOT_EQUAL
+    | LESS_THAN
+    | GREATER_THAN
+    | LESS_THAN_EQUAL
+    | GREATER_THAN_EQUAL expr_2
     ;
 
 expr_3
-    : expr_4 expr_tail_3
+    : expr_4 (plus_or_minus^ expr_4)*
     ;
 
-expr_tail_3
-    : PLUS expr_3 -> ^(PLUS expr_3)
-    | MINUS expr_3 -> ^(MINUS expr_3)
-    |
+plus_or_minus
+    : PLUS
+    | MINUS
     ;
 
 expr_4
-    : expr_5 expr_tail_4
+    : expr_5 (multiply_or_divide^ expr_5)*
     ;
 
-expr_tail_4
-    : MULTIPLY expr_4 -> ^(MULTIPLY expr_4)
-    | DIVIDE expr_4 -> ^(DIVIDE expr_4)
-    |
+multiply_or_divide
+    : MULTIPLY
+    | DIVIDE
     ;
 
 expr_5
-    : OPENPAREN! expr CLOSEPAREN!
+    : OPENPAREN! expr^ CLOSEPAREN!
     | value
     | constant
     ;
 
 v_expr
-    : v_expr_2! expr_tail
+    : v_expr_2 (bit_operator^ expr_2)*
     ;
 
 v_expr_2
-    : v_expr_3 expr_tail_2
+    : v_expr_3 (compare_operator^ expr_3)*
     ;
 
 v_expr_3
-    : v_expr_4 expr_tail_3
+    : v_expr_4 (plus_or_minus^ expr_4)*
     ;
 
 v_expr_4
-    : value_index expr_tail_4
+    : value_index (multiply_or_divide^ expr_5)*
     ;
 
 nv_expr
-    : nv_expr_2! expr_tail
+    : nv_expr_2 (bit_operator^ expr_2)*
     ;
 
 nv_expr_2
-    : nv_expr_3 expr_tail_2
+    : nv_expr_3 (compare_operator^ expr_3)*
     ;
 
 nv_expr_3
-    : nv_expr_4 expr_tail_3
+    : nv_expr_4 (plus_or_minus^ expr_4)*
     ;
 
 nv_expr_4
-    : nv_expr_5 expr_tail_4
+    : nv_expr_5 (multiply_or_divide^ expr_5)*
     ;
 
 nv_expr_5
-    : OPENPAREN expr CLOSEPAREN
+    : OPENPAREN! expr^ CLOSEPAREN!
     | constant
     ;
 
@@ -349,21 +345,14 @@ value_index_2
     ;
 
 index_expr
-    : index_expr_2! index_expr_tail[$index_expr_2.tree]
-    ;
-
-index_expr_tail[CommonTree assignee]
-    : PLUS index_expr -> ^(PLUS {$assignee} index_expr)
-    | MINUS index_expr -> ^(MINUS {$assignee} index_expr)
-    |
+    : index_expr_2 (plus_or_minus^ index_expr_2)*
     ;
 
 index_expr_2
-    : value! index_expr_2_tail[$value.tree]
-    | constant! index_expr_2_tail[$constant.tree]
+    : index_expr_3 (MULTIPLY^ index_expr_3)*
     ;
 
-index_expr_2_tail[CommonTree assignee]
-    : MULTIPLY index_expr_2 -> ^(MULTIPLY {$assignee} index_expr_2)
-    |
+index_expr_3
+    : value
+    | constant
     ;
