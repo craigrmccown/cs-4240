@@ -221,12 +221,12 @@ assignment_index[Token id]
     ;
 
 stat_expr
-    : id=ID! funct_call_or_v_expr[$id]
+    : ID funct_call_or_v_expr -> ^(ID funct_call_or_v_expr?)
     | nv_expr
     ;
 
-funct_call_or_v_expr[Token id]
-    : OPENPAREN expr_list CLOSEPAREN -> ^({new CommonTree($id)} expr_list?)
+funct_call_or_v_expr
+    : OPENPAREN! expr_list CLOSEPAREN!
     | v_expr
     ;
 
@@ -331,7 +331,7 @@ expr_list_tail
     ;
 
 value
-    : ID value_index
+    : ID^ value_index
     ;
 
 value_index
