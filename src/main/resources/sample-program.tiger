@@ -6,7 +6,7 @@ begin
         var i, sum : int := 0;
         begin
             for i := 1 to 100 do /* for loop for dot product */
-                sum := sum + X[i] * Y[i];
+                sum := sum[0] + X[i] * Y[i];
             enddo;
             printi(sum); /* library call to printi to print the dot product */
         end;

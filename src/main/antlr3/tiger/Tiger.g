@@ -77,7 +77,7 @@ WS
     ;
 
 tiger_program
-    : type_declaration_list funct_declaration_list -> ^(PROGRAM type_declaration_list funct_declaration_list)
+    : type_declaration_list funct_declaration_list -> ^(PROGRAM type_declaration_list? funct_declaration_list)
     ;
 
 funct_declaration_list
@@ -213,11 +213,7 @@ stat_else
 
 funct_call_or_assignment[Token id]
     : OPENPAREN expr_list CLOSEPAREN -> ^({new CommonTree($id)} expr_list)
-    | assignment_index[$id] ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP assignment_index stat_expr?)
-    ;
-
-assignment_index[Token id]
-    : value_index -> ^({new CommonTree($id)} value_index?)
+    | value_index ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP ^({new CommonTree($id)} value_index?) stat_expr?)
     ;
 
 stat_expr
@@ -227,7 +223,7 @@ stat_expr
 
 funct_call_or_v_expr[Token id]
     : OPENPAREN expr_list CLOSEPAREN -> ^({new CommonTree($id)} expr_list?)
-    | v_expr
+    | v_expr[$id]
     ;
 
 /* stand-alone expression */
@@ -278,20 +274,20 @@ expr_5
     | constant
     ;
 
-v_expr
-    : v_expr_2 (bit_operator^ expr_2)*
+v_expr[Token id]
+    : v_expr_2[$id] (bit_operator^ expr_2)*
     ;
 
-v_expr_2
-    : v_expr_3 (compare_operator^ expr_3)*
+v_expr_2[Token id]
+    : v_expr_3[$id] (compare_operator^ expr_3)*
     ;
 
-v_expr_3
-    : v_expr_4 (plus_or_minus^ expr_4)*
+v_expr_3[Token id]
+    : v_expr_4[$id] (plus_or_minus^ expr_4)*
     ;
 
-v_expr_4
-    : value_index (multiply_or_divide^ expr_5)*
+v_expr_4[Token id]
+    : (value_index -> {new CommonTree($id)} value_index?) (multiply_or_divide expr_5 -> ^(multiply_or_divide expr_5))*
     ;
 
 nv_expr
@@ -331,7 +327,7 @@ expr_list_tail
     ;
 
 value
-    : ID value_index
+    : ID^ value_index
     ;
 
 value_index
