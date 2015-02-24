@@ -217,7 +217,7 @@ funct_call_or_assignment[Token id]
     ;
 
 stat_expr
-    : id=ID! funct_call_or_v_expr[$id]
+    : id=ID funct_call_or_v_expr[$id]
     | nv_expr
     ;
 
