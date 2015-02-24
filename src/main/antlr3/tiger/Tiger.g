@@ -217,7 +217,7 @@ funct_call_or_assignment[Token id]
     ;
 
 stat_expr
-    : id=ID funct_call_or_v_expr[$id]
+    : id=ID! funct_call_or_v_expr[$id]
     | nv_expr
     ;
 
@@ -287,7 +287,11 @@ v_expr_3[Token id]
     ;
 
 v_expr_4[Token id]
-    : (value_index -> {new CommonTree($id)} value_index?) (multiply_or_divide expr_5 -> ^(multiply_or_divide expr_5))*
+    : (andrews_hack[$id] -> andrews_hack) (multiply_or_divide expr_5 -> ^(multiply_or_divide expr_5))*
+    ;
+
+andrews_hack[Token id]
+    : value_index -> ^({new CommonTree($id)} value_index?)
     ;
 
 nv_expr
