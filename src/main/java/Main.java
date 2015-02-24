@@ -6,8 +6,12 @@ import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) {
+        if (args.length != 1) {
+            System.out.println("No file selected or too many arguments");
+            System.exit(0);
+        }
         try {
-            CharStream cs = new ANTLRFileStream("target/classes/large-program.tiger");
+            CharStream cs = new ANTLRFileStream("target/classes/" + args[0]);
             TigerLexer lexer = new TigerLexer(cs);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             CustomTigerParser parser = new CustomTigerParser(tokens);

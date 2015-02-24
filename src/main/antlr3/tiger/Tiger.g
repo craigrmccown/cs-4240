@@ -111,7 +111,7 @@ param_list_tail
     ;
 
 param
-    : ID COLON type_id -> ^(ID type_id)
+    : ID COLON type_id -> ^(type_id ID)
     ;
 
 block_list
@@ -170,7 +170,7 @@ base_type
     ;
 
 var_declaration
-    : VAR id_list COLON type_id optional_init SEMICOLON -> ^(VAR id_list type_id optional_init?)
+    : VAR id_list COLON type_id optional_init SEMICOLON -> ^(type_id id_list optional_init?)
     ;
 
 id_list
