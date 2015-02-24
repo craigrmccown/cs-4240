@@ -77,7 +77,7 @@ WS
     ;
 
 tiger_program
-    : type_declaration_list funct_declaration_list -> ^(PROGRAM type_declaration_list funct_declaration_list)
+    : type_declaration_list funct_declaration_list -> ^(PROGRAM type_declaration_list? funct_declaration_list)
     ;
 
 funct_declaration_list
