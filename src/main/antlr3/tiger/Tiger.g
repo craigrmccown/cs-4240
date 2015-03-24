@@ -151,7 +151,7 @@ named_type
 
 type
     : base_type
-    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET type_end OF base_type -> ^(OF ^(ARRAY INTLIT type_end?) base_type)
+    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET type_end OF base_type -> ^(ARRAY INTLIT type_end? base_type)
     ;
 
 type_end
@@ -200,7 +200,7 @@ stat
     : id=ID! funct_call_or_assignment[$id] SEMICOLON!
     | IF expr THEN stat_seq stat_else ENDIF SEMICOLON -> ^(IF expr ^(THEN stat_seq) stat_else?)
     | WHILE expr DO stat_seq ENDDO SEMICOLON -> ^(WHILE expr ^(DO stat_seq))
-    | FOR ID ASSIGNMENT_OP index_expr TO index_expr DO stat_seq ENDDO SEMICOLON -> ^(FOR ^(TO ^(ASSIGNMENT_OP ID index_expr) index_expr) ^(DO stat_seq))
+    | FOR ID ASSIGNMENT_OP index_expr TO index_expr DO stat_seq ENDDO SEMICOLON -> ^(FOR ^(TO ^(ASSIGNMENT_OP index_expr index_expr) ID) ^(DO stat_seq))
     | BREAK SEMICOLON
     | RETURN expr SEMICOLON -> ^(RETURN expr)
     | block
@@ -212,7 +212,7 @@ stat_else
     ;
 
 funct_call_or_assignment[Token id]
-    : OPENPAREN expr_list CLOSEPAREN -> ^({new CommonTree($id)} expr_list)
+    : OPENPAREN expr_list CLOSEPAREN -> ^({new CommonTree($id)} expr_list?)
     | value_index ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP ^({new CommonTree($id)} value_index?) stat_expr?)
     ;
 
