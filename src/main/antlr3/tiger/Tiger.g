@@ -247,7 +247,7 @@ compare_operator
     | LESS_THAN
     | GREATER_THAN
     | LESS_THAN_EQUAL
-    | GREATER_THAN_EQUAL expr_2
+    | GREATER_THAN_EQUAL
     ;
 
 expr_3

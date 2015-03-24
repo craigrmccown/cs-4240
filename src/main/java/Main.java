@@ -17,6 +17,7 @@ public class Main {
             CustomTigerParser parser = new CustomTigerParser(tokens);
             CommonTree x = (CommonTree) parser.tiger_program().getTree();
             if (parser.successful()) System.out.println("Successful Parse"); //printTree(x, "");
+            printTree(x, "");
         } catch (IOException e) {
             System.out.println("failed to read input file");
             System.exit(1);
