@@ -16,7 +16,7 @@ public class Main {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             CustomTigerParser parser = new CustomTigerParser(tokens);
             CommonTree x = (CommonTree) parser.tiger_program().getTree();
-            if (parser.successful()) System.out.println("Successful Parse"); //printTree(x, "");
+            if (parser.successful()) printTree(x, "");
             printTree(x, "");
         } catch (IOException e) {
             System.out.println("failed to read input file");

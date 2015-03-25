@@ -142,11 +142,7 @@ var_declaration_list
     ;
 
 type_declaration
-    : named_type EQUALS type SEMICOLON -> ^(EQUALS named_type type)
-    ;
-
-named_type
-    : TYPE ID -> ^(TYPE ID)
+    : TYPE ID EQUALS type SEMICOLON -> ^(TYPE ID type)
     ;
 
 type
@@ -170,7 +166,7 @@ base_type
     ;
 
 var_declaration
-    : VAR id_list COLON type_id optional_init SEMICOLON -> ^(type_id id_list optional_init?)
+    : VAR id_list COLON type_id optional_init SEMICOLON -> ^(VAR type_id id_list optional_init?)
     ;
 
 id_list
