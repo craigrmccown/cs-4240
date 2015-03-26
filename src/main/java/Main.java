@@ -1,6 +1,7 @@
 import org.antlr.runtime.*;
 import org.antlr.runtime.tree.BaseTree;
 import org.antlr.runtime.tree.CommonTree;
+import org.antlr.runtime.tree.TreeAdaptor;
 
 import java.io.IOException;
 
@@ -15,6 +16,7 @@ public class Main {
             TigerLexer lexer = new TigerLexer(cs);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             CustomTigerParser parser = new CustomTigerParser(tokens);
+            parser.setTreeAdaptor(new TigerTreeAdaptor());
             BaseTree tree = (BaseTree) parser.tiger_program().getTree();
 
             if (!parser.successful()) throw new RuntimeException();

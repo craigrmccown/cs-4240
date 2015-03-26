@@ -20,13 +20,13 @@ public class SymbolTable {
     }
 
     public boolean addSymbol(Scope scope, BaseTree tree) {
-        if (tree.toString().equals("type")) {
+        if (tree.getType() == TigerLexer.TYPE) {
             addType(scope, tree);
             return true;
-        } else if (tree.toString().equals("var")) {
+        } else if (tree.getType() == TigerLexer.VAR) {
             addVar(scope, tree);
             return true;
-        } else if (tree.toString().equals("function")) {
+        } else if (tree.getType() == TigerLexer.FUNCTION) {
             addFunction(scope, tree);
             return true;
         } else {
@@ -35,7 +35,7 @@ public class SymbolTable {
     }
 
     private void addType(Scope scope, BaseTree typeTree) {
-        if (typeTree.getChild(0).toString().equals("array")) {
+        if (typeTree.getChild(0).getType() == TigerLexer.ARRAY) {
             BaseTree arrayTree = (BaseTree) typeTree.getChild(0);
 
             if (arrayTree.getChildren().size() == 2) {
@@ -88,7 +88,7 @@ public class SymbolTable {
         BaseTree paramsTree = (BaseTree) functionTree.getChild(2);
         BaseTree paramTree;
 
-        if (paramsTree.toString().equals("PARAMS")) {
+        if (paramsTree.getType() == TigerLexer.PARAMS) {
             for (int i = 0; i < paramsTree.getChildren().size(); i ++) {
                 paramTree = (BaseTree) paramsTree.getChild(i);
                 params.add(new VariableSymbol(paramTree.getChild(1).toString(), paramTree.getChild(0).toString()));

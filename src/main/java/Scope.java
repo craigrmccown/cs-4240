@@ -25,6 +25,20 @@ public class Scope {
         symbols.put(key, value);
     }
 
+    public Symbol lookup(String key) {
+        Symbol found = symbols.get(key);
+
+        if (found == null) {
+            if (parent == null) {
+                return null;
+            } else {
+                return parent.lookup(key);
+            }
+        } else {
+            return found;
+        }
+    }
+
     public List<Scope> getChildren() {
         return children;
     }
