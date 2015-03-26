@@ -1,4 +1,5 @@
 import org.antlr.runtime.*;
+import org.antlr.runtime.tree.BaseTree;
 import org.antlr.runtime.tree.CommonTree;
 
 import java.io.IOException;
@@ -14,11 +15,14 @@ public class Main {
             TigerLexer lexer = new TigerLexer(cs);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             CustomTigerParser parser = new CustomTigerParser(tokens);
-            CommonTree tree = (CommonTree) parser.tiger_program().getTree();
-            if (parser.successful()) {
-                SymbolTable symbolTable = new SymbolTable(tree);
-                System.out.println(symbolTable);
-            }
+            BaseTree tree = (BaseTree) parser.tiger_program().getTree();
+
+            if (!parser.successful()) throw new RuntimeException();
+
+            SemanticChecker semanticChecker = new SemanticChecker();
+            semanticChecker.check(tree);
+
+            System.out.println(semanticChecker.getSymbolTable());
         } catch (IOException e) {
             System.out.println("failed to read input file");
             System.exit(1);

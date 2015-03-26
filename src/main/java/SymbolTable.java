@@ -3,42 +3,34 @@ import org.antlr.runtime.tree.BaseTree;
 import java.util.ArrayList;
 
 public class SymbolTable {
-    private Scope root;
+    private Scope rootScope;
 
-    public SymbolTable(BaseTree parseTree) {
-        root = new Scope();
-        walk(parseTree, root);
+    public SymbolTable() {
+        rootScope = new Scope();
     }
 
-    private void walk(BaseTree parseTree, Scope currentScope) {
-        if (parseTree.getChildren() != null) {
-            for (int i = 0; i < parseTree.getChildren().size(); i ++) {
-                if (parseTree.getChild(i) instanceof BaseTree) {
-                    Scope nextScope;
-
-                    if (parseTree.getChild(i).toString().equals("BLOCK")) {
-                        nextScope = new Scope(currentScope);
-                        currentScope.addChildScope(nextScope);
-                    } else {
-                        nextScope = currentScope;
-                        addSymbol(currentScope, (BaseTree) parseTree.getChild(i));
-                    }
-
-                    walk((BaseTree) parseTree.getChild(i), nextScope);
-                } else {
-                    // terminal
-                }
-            }
-        }
+    public Scope getRootScope() {
+        return rootScope;
     }
 
-    private void addSymbol(Scope scope, BaseTree tree) {
+    public Scope addChildScope(Scope parent) {
+        Scope child = new Scope();
+        parent.addChildScope(child);
+        return child;
+    }
+
+    public boolean addSymbol(Scope scope, BaseTree tree) {
         if (tree.toString().equals("type")) {
             addType(scope, tree);
+            return true;
         } else if (tree.toString().equals("var")) {
             addVar(scope, tree);
+            return true;
         } else if (tree.toString().equals("function")) {
             addFunction(scope, tree);
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -110,16 +102,21 @@ public class SymbolTable {
     }
 
     public String toString() {
-        return toString(root, "");
+        return toString(rootScope, 0);
     }
 
-    private String toString(Scope scope, String indent) {
+    private String toString(Scope scope, int indentation) {
         String str = "";
+        String childString = "  CHILDREN:\n";
 
-        for (int i = 0; i < scope.getChildren().size(); i ++) {
-            str += toString(scope.getChildren().get(i), indent + "\t");
+        if (scope.getChildren().size() == 0) {
+            childString += "\t- (no children)\n";
         }
 
-        return scope.toString(indent) + str;
+        for (int i = 0; i < scope.getChildren().size(); i ++) {
+            str += toString(scope.getChildren().get(i), indentation + 1);
+        }
+
+        return Util.indentBlock("SCOPE {\n" + scope.toString(), indentation) + "\n" + Util.indentBlock(childString, indentation) + str + Util.indentBlock("}\n", indentation);
     }
 }

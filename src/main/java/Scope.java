@@ -30,17 +30,14 @@ public class Scope {
     }
 
     public String toString() {
-        return toString("");
-    }
-
-    public String toString(String prefix) {
-        String ret = prefix + "SCOPE\n";
+        String ret = "  SYMBOLS:\n";
 
         if (symbols.size() == 0) {
-            ret += prefix + "(no symbols)\n";
+            ret += "\t- (no symbols)\n";
         }
+
         for (Symbol s : symbols.values()) {
-            ret += prefix + s.toString() + "\n";
+            ret += "\t- " + s.toString() + "\n";
         }
 
         return ret;
