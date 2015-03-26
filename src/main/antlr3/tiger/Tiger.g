@@ -51,6 +51,7 @@ tokens {
     ASSIGNMENT_OP = ':=';
     PROGRAM;
     PARAMS;
+    PARAM;
     BLOCK;
 }
 
@@ -111,7 +112,7 @@ param_list_tail
     ;
 
 param
-    : ID COLON type_id -> ^(type_id ID)
+    : ID COLON type_id -> ^(PARAM type_id ID)
     ;
 
 block_list
@@ -142,12 +143,12 @@ var_declaration_list
     ;
 
 type_declaration
-    : TYPE ID EQUALS type SEMICOLON -> ^(TYPE ID type)
+    : TYPE ID EQUALS type SEMICOLON -> ^(TYPE type ID)
     ;
 
 type
     : base_type
-    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET type_end OF base_type -> ^(ARRAY INTLIT type_end? base_type)
+    | ARRAY OPENBRACKET INTLIT CLOSEBRACKET type_end OF base_type -> ^(ARRAY base_type INTLIT type_end?)
     ;
 
 type_end
