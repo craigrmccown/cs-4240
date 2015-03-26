@@ -7,6 +7,6 @@ public class VariableSymbol extends Symbol {
     }
 
     public String toString() {
-        return "variable: " + name + ", " + dataType;
+        return "variable: { identifier: " + name + ", data type: " + dataType + " }";
     }
 }

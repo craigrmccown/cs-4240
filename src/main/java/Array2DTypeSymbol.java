@@ -7,6 +7,10 @@ public class Array2DTypeSymbol extends ArrayTypeSymbol {
     }
 
     public String toString() {
-        return "2d array type: " + name + ", " + dataType + ", " + arrayType + ", " + size + ", " + size2d;
+        return "2d array type: { identifier: " + name +
+                ", data type: " + dataType +
+                ", array data type: " + arrayType +
+                ", size (first dimension): " + size +
+                ", size (second dimension): " + size2d + " }";
     }
 }

@@ -117,6 +117,8 @@ public class SymbolTable {
             str += toString(scope.getChildren().get(i), indentation + 1);
         }
 
-        return Util.indentBlock("SCOPE {\n" + scope.toString(), indentation) + "\n" + Util.indentBlock(childString, indentation) + str + Util.indentBlock("}\n", indentation);
+        return Util.indentBlock("SCOPE {\n" + scope.toString(), indentation) + "\n" +
+                Util.indentBlock(childString, indentation) + str +
+                Util.indentBlock("}\n", indentation);
     }
 }

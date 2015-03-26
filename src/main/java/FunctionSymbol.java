@@ -16,6 +16,8 @@ public class FunctionSymbol extends Symbol {
     }
 
     public String toString() {
-        return "function: " + name + ", " + returnType + ", " + params;
+        return "function: { identifier: " + name +
+                ", return type: " + returnType +
+                ", parameters " + params + " }";
     }
 }

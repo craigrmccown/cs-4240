@@ -7,6 +7,6 @@ public class TypeSymbol extends Symbol {
     }
 
     public String toString() {
-        return "type: " + name + ", " + dataType;
+        return "type: { identifier: " + name + ", data type: " + dataType + " }";
     }
 }

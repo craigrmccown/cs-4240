@@ -9,6 +9,9 @@ public class ArrayTypeSymbol extends TypeSymbol {
     }
 
     public String toString() {
-        return "array type: " + name + ", " + dataType + ", " + arrayType + ", " + size;
+        return "array type: { identifier: " + name +
+                ", data type: " + dataType +
+                ", array data type: " + arrayType +
+                ", size: " + size + " }";
     }
 }
