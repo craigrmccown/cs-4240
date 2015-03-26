@@ -17,7 +17,7 @@ public class Main {
             CommonTree tree = (CommonTree) parser.tiger_program().getTree();
             if (parser.successful()) {
                 SymbolTable symbolTable = new SymbolTable(tree);
-                int i = 0;
+                System.out.println(symbolTable);
             }
         } catch (IOException e) {
             System.out.println("failed to read input file");

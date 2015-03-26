@@ -5,4 +5,8 @@ public class VariableSymbol extends Symbol {
         super(name);
         this.dataType = dataType;
     }
+
+    public String toString() {
+        return "variable: " + name + ", " + dataType;
+    }
 }

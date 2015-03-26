@@ -14,4 +14,8 @@ public class FunctionSymbol extends Symbol {
             this.params.add(params.get(i));
         }
     }
+
+    public String toString() {
+        return "function: " + name + ", " + returnType + ", " + params;
+    }
 }

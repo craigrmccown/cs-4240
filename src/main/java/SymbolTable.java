@@ -11,8 +11,6 @@ public class SymbolTable {
     }
 
     private void walk(BaseTree parseTree, Scope currentScope) {
-        System.out.println(parseTree);
-
         if (parseTree.getChildren() != null) {
             for (int i = 0; i < parseTree.getChildren().size(); i ++) {
                 if (parseTree.getChild(i) instanceof BaseTree) {
@@ -28,7 +26,7 @@ public class SymbolTable {
 
                     walk((BaseTree) parseTree.getChild(i), nextScope);
                 } else {
-                    System.out.println(parseTree.getChild(i));
+                    // terminal
                 }
             }
         }
@@ -51,7 +49,7 @@ public class SymbolTable {
             if (arrayTree.getChildren().size() == 2) {
                 scope.addSymbol(
                         typeTree.getChild(1).toString(),
-                        new ArraySymbol(
+                        new ArrayTypeSymbol(
                                 typeTree.getChild(1).toString(),
                                 typeTree.getChild(0).toString(),
                                 arrayTree.getChild(0).toString(),
@@ -61,7 +59,7 @@ public class SymbolTable {
             } else if (arrayTree.getChildren().size() == 3) {
                 scope.addSymbol(
                         typeTree.getChild(1).toString(),
-                        new Array2DSymbol(
+                        new Array2DTypeSymbol(
                                 typeTree.getChild(1).toString(),
                                 typeTree.getChild(0).toString(),
                                 arrayTree.getChild(0).toString(),
@@ -109,5 +107,19 @@ public class SymbolTable {
                 functionTree.getChild(1).toString(),
                 new FunctionSymbol(functionTree.getChild(1).toString(), functionTree.getChild(0).toString(), params)
         );
+    }
+
+    public String toString() {
+        return toString(root, "");
+    }
+
+    private String toString(Scope scope, String indent) {
+        String str = "";
+
+        for (int i = 0; i < scope.getChildren().size(); i ++) {
+            str += toString(scope.getChildren().get(i), indent + "\t");
+        }
+
+        return scope.toString(indent) + str;
     }
 }
