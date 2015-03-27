@@ -3,7 +3,7 @@ grammar Tiger;
 options {
     k = 1;
     output = AST;
-    ASTLabelType=CommonTree;
+    ASTLabelType=TigerTree;
 }
 
 tokens {
@@ -89,7 +89,7 @@ funct_declaration_list
     ;
 
 funct_declaration[Token ret_type]
-    : FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON -> ^(FUNCTION {new CommonTree($ret_type)} ID param_list? block_list)
+    : FUNCTION ID OPENPAREN param_list CLOSEPAREN BEGIN block_list END SEMICOLON -> ^(FUNCTION {new TigerTree($ret_type)} ID param_list? block_list)
     ;
 
 void_funct_or_main
@@ -209,8 +209,8 @@ stat_else
     ;
 
 funct_call_or_assignment[Token id]
-    : OPENPAREN expr_list CLOSEPAREN -> ^({new CommonTree($id)} expr_list?)
-    | value_index ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP ^({new CommonTree($id)} value_index?) stat_expr?)
+    : OPENPAREN expr_list CLOSEPAREN -> ^({new TigerTree($id)} expr_list?)
+    | value_index ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP ^({new TigerTree($id)} value_index?) stat_expr?)
     ;
 
 stat_expr
@@ -219,7 +219,7 @@ stat_expr
     ;
 
 funct_call_or_v_expr[Token id]
-    : OPENPAREN expr_list CLOSEPAREN -> ^({new CommonTree($id)} expr_list?)
+    : OPENPAREN expr_list CLOSEPAREN -> ^({new TigerTree($id)} expr_list?)
     | v_expr[$id]
     ;
 
@@ -288,7 +288,7 @@ v_expr_4[Token id]
     ;
 
 andrews_hack[Token id]
-    : value_index -> ^({new CommonTree($id)} value_index?)
+    : value_index -> ^({new TigerTree($id)} value_index?)
     ;
 
 nv_expr

@@ -1,21 +1,28 @@
 import org.antlr.runtime.Token;
 import org.antlr.runtime.tree.CommonTree;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class TigerTree extends CommonTree {
-    private String functionKey;
-
     public TigerTree(Token token) {
         super(token);
     }
 
+    public boolean isBlock() {
+        return getType() == TigerLexer.BLOCK;
+    }
+
+    public boolean isVariableReference() {
+        return getType() == TigerLexer.ID && parent.getType() != TigerLexer.PARAM;
+    }
+
+    public boolean isSymbolDeclaration() {
+        return getType() == TigerLexer.TYPE || getType() == TigerLexer.VAR || getType() == TigerLexer.FUNCTION;
+    }
+
     public boolean isFunctionBody() {
-        return getType() == TigerLexer.BLOCK && parent.getType() == TigerLexer.FUNCTION;
+        return isBlock() && parent.getType() == TigerLexer.FUNCTION;
     }
 
     public String getFunctionKey() {
-        return this.functionKey = parent.getChild(1).toString();
+        return parent.getChild(1).toString();
     }
 }

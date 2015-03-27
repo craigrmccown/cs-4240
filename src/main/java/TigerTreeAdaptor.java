@@ -7,7 +7,17 @@ public class TigerTreeAdaptor extends CommonTreeAdaptor {
         if (token == null) {
             return new TigerTree(token);
         } else {
-            return new TigerTree(new TigerToken(token, "asdf"));
+            return new TigerTree(new TigerToken(token));
         }
+    }
+
+    @Override
+    public Token createToken(int tokenType, String text) {
+        return new TigerToken(tokenType, text);
+    }
+
+    @Override
+    public Token createToken(Token fromToken) {
+        return new TigerToken(fromToken);
     }
 }

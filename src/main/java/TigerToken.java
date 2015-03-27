@@ -2,10 +2,26 @@ import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.Token;
 
 public class TigerToken extends CommonToken {
-    public String asdf;
+    public double value;
 
-    public TigerToken(Token token, String asdf) {
+    public TigerToken(Token token) {
         super(token);
-        this.asdf = asdf;
+        setValue();
+    }
+
+    public TigerToken(int tokenType, String text) {
+        super(tokenType, text);
+        setValue();
+    }
+
+    private void setValue() {
+        switch (getType()) {
+            case TigerLexer.INTLIT:
+                this.value = Integer.parseInt(getText());
+                break;
+            case TigerLexer.FIXEDPTLIT:
+                this.value = Double.parseDouble(getText());
+                break;
+        }
     }
 }

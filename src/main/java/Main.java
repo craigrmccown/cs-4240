@@ -1,7 +1,5 @@
 import org.antlr.runtime.*;
 import org.antlr.runtime.tree.BaseTree;
-import org.antlr.runtime.tree.CommonTree;
-import org.antlr.runtime.tree.TreeAdaptor;
 
 import java.io.IOException;
 
