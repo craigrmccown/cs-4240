@@ -6,15 +6,34 @@ public class SymbolTable {
     private Scope rootScope;
 
     public SymbolTable() {
-        rootScope = new Scope();
+        rootScope = new Scope(null);
+
+        ArrayList<VariableSymbol> printiParams = new ArrayList<VariableSymbol>();
+        ArrayList<VariableSymbol> printfParams = new ArrayList<VariableSymbol>();
+        ArrayList<VariableSymbol> notParams = new ArrayList<VariableSymbol>();
+        ArrayList<VariableSymbol> exitParams = new ArrayList<VariableSymbol>();
+
+        printiParams.add(new VariableSymbol("i", "int"));
+        printfParams.add(new VariableSymbol("f", "fixedpt"));
+        notParams.add(new VariableSymbol("i", "int"));
+        exitParams.add(new VariableSymbol("i", "int"));
+
+        rootScope.addSymbol("printi", new FunctionSymbol("printi", "void", printiParams));
+        rootScope.addSymbol("printf", new FunctionSymbol("printf", "void", printfParams));
+        rootScope.addSymbol("readi", new FunctionSymbol("readi", "int", new ArrayList<VariableSymbol>()));
+        rootScope.addSymbol("readf", new FunctionSymbol("readf", "fixedpt", new ArrayList<VariableSymbol>()));
+        rootScope.addSymbol("flush", new FunctionSymbol("flush", "void", new ArrayList<VariableSymbol>()));
+        rootScope.addSymbol("not", new FunctionSymbol("not", "int", notParams));
+        rootScope.addSymbol("exit", new FunctionSymbol("exit", "void", exitParams));
+
     }
 
     public Scope getRootScope() {
         return rootScope;
     }
 
-    public Scope addChildScope(Scope parent) {
-        Scope child = new Scope();
+    public Scope addChildScope(Scope parent, String functionKey) {
+        Scope child = new Scope(parent, functionKey);
         parent.addChildScope(child);
         return child;
     }
@@ -71,7 +90,7 @@ public class SymbolTable {
     private void addVar(Scope scope, BaseTree varTree) {
         int lastVar = varTree.getChildren().size();
 
-        if (varTree.getChild(lastVar - 1).toString().equals(":=")) {
+        if (varTree.getChild(lastVar - 1).getType() == TigerLexer.ASSIGNMENT_OP) {
             lastVar --;
         }
 

@@ -2,6 +2,7 @@ import org.antlr.runtime.tree.BaseTree;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class SemanticChecker {
     private SymbolTable symbolTable;
@@ -24,11 +25,22 @@ public class SemanticChecker {
                 Scope nextScope = currentScope;
 
                 if (subTree.getChild(i).getType() == TigerLexer.BLOCK) {
-                    nextScope = symbolTable.addChildScope(currentScope);
+                    TigerTree blockTree = (TigerTree) subTree.getChild(i);
+                    String functionKey = null;
+
+                    if (blockTree.isFunctionBody()) {
+                        functionKey = blockTree.getFunctionKey();
+                    }
+
+                    nextScope = symbolTable.addChildScope(currentScope, functionKey);
                 } else if (symbolTable.addSymbol(currentScope, (BaseTree) subTree.getChild(i))) {
                     // added symbol to table
-                } else {
+                } else if (subTree.getChild(i).getType() == TigerLexer.ID && subTree.getType() != TigerLexer.PARAM) {
+                    Symbol symbol = currentScope.lookup(subTree.getChild(i).toString());
 
+                    if (symbol == null) {
+                        throw new RuntimeException("symbol " + subTree.getChild(i).toString() + " not recognized on line " + subTree.getChild(i).getLine());
+                    }
                 }
 
                 check((BaseTree) subTree.getChild(i), nextScope);

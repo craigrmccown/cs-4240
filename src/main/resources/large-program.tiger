@@ -41,15 +41,15 @@ end;
 void function no_params()
 begin
     begin
-        print(0);
+        printi(0);
     end;
     begin
-        print(1);
+        printi(1);
     end;
 end;
 
 /* multiplies 3x3 matrices */
-Table function mat_mult(m1: Matrix, m2: Matrix)
+Matrix function mat_mult(m1: Matrix, m2: Matrix)
 begin
     begin
         type Fake = array[2] of int;
@@ -60,7 +60,7 @@ begin
             begin
                 sum := 0;
                 for k := 0 to 2 do
-                    sum := sum + m1[k][i] * list2[j][k];
+                    sum := sum + m1[k][i] * m2[j][k];
                 enddo;
                 ret[i][j] := sum;
             end;
