@@ -2,7 +2,7 @@ type Pair = array[2] of int;
 type Matrix = array[3][3] of fixedpt;
 
 /* helper function, because calculating fibonacci numbers is hard */
-int function fibonacci(p:Pair)
+int function fibonacci1(p:Pair)
 begin
     begin
         return p[0] + p[1];
@@ -16,12 +16,12 @@ begin
         if num = 0 then return 0;
         else
         begin
-            var current, value : int := 0;
+            var current, value : int;
             var p : Pair;
             p[0] := 0;
             p[1] := 1;
             /* simplest way I could think of for an infinite loop */
-            while ((1 + 2 * 3) = ((1 + 2) * 3 - (2))) & 1 do
+            while ((1 + 2 * 3.0) = ((1 + 2) * 3 - (2))) & 1 do
             begin
                 value := fibonacci(p);
                 p[0] := p[1];
@@ -54,7 +54,7 @@ begin
     begin
         type Fake = array[2] of int;
         var ret : Matrix;
-        var i, j, k, sum : int := 0;
+        var i, j, k, sum : int;
         for i := 0 to 2 do
             for j := 0 to 2 do
             begin
@@ -82,11 +82,11 @@ begin
     begin
         type MatrixList = array[27] of fixedpt;
 
-        var m1, m2, m3 : Matrix := 0.0;
+        var m1, m2, m3 : Matrix;
         var list1 : MatrixList;
         var a1 : MatrixList;
         var x : int := 5;
-        var ret, i, j : int := 0;
+        var ret, i, j : int;
         ret := fibonacci(5);
 
         print_wrapper(ret);

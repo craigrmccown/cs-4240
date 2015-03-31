@@ -53,6 +53,7 @@ tokens {
     PARAMS;
     PARAM;
     BLOCK;
+    VALUE;
 }
 
 ID
@@ -210,7 +211,7 @@ stat_else
 
 funct_call_or_assignment[Token id]
     : OPENPAREN expr_list CLOSEPAREN -> ^({new TigerTree($id)} expr_list?)
-    | value_index ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP ^({new TigerTree($id)} value_index?) stat_expr?)
+    | value_index ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP ^(VALUE ^({new TigerTree($id)} value_index?)) stat_expr?)
     ;
 
 stat_expr
@@ -288,7 +289,7 @@ v_expr_4[Token id]
     ;
 
 andrews_hack[Token id]
-    : value_index -> ^({new TigerTree($id)} value_index?)
+    : value_index -> ^(VALUE ^({new TigerTree($id)} value_index?))
     ;
 
 nv_expr
@@ -328,7 +329,7 @@ expr_list_tail
     ;
 
 value
-    : ID^ value_index
+    : ID value_index -> ^(VALUE ^(ID value_index?))
     ;
 
 value_index

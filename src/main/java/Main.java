@@ -15,7 +15,7 @@ public class Main {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             CustomTigerParser parser = new CustomTigerParser(tokens);
             parser.setTreeAdaptor(new TigerTreeAdaptor());
-            BaseTree tree = (BaseTree) parser.tiger_program().getTree();
+            TigerTree tree = (TigerTree) parser.tiger_program().getTree();
 
             if (!parser.successful()) throw new RuntimeException();
 

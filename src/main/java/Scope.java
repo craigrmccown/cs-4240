@@ -1,12 +1,17 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Scope {
+    public final static int VOID = 0;
+    public final static int INTTYPE = 1;
+    public final static int FIXEDPTTYPE = 2;
+
     private String functionKey;
     private Scope parent;
-    private HashMap<String, Symbol> symbols;
-    private ArrayList<Scope> children;
+    private Map<String, Symbol> symbols;
+    private List<Scope> children;
 
     public Scope(String functionKey) {
         this.functionKey = functionKey;
@@ -19,39 +24,37 @@ public class Scope {
         this.parent = parent;
     }
 
-    public void addChildScope(Scope child) {
-        this.children.add(child);
-    }
+    public void addChildScope(Scope child) { this.children.add(child); }
 
     public void addSymbol(String key, Symbol value) {
-        symbols.put(key, value);
-    }
+        Symbol old = symbols.get(key);
 
-    public boolean isFunctionScope() {
-        return functionKey != null;
+        if (old == null) {
+            symbols.put(key, value);
+        } else {
+            throw new RuntimeException("symbol defined twice: " + key);
+        }
     }
 
     public Symbol lookup(String key) {
         Symbol found = symbols.get(key);
 
-        if (found == null) {
-            if (isFunctionScope()) {
-                VariableSymbol paramSymbol = ((FunctionSymbol) parent.lookup(functionKey)).getParam(key);
+        if (found != null) {
+            return found;
+        } else {
+            if (functionKey != null) {
+                Symbol paramSymbol = parent.lookup(functionKey).getParameter(key);
 
-                if (paramSymbol == null) {
-                    return parent.lookup(key);
-                } else {
+                if (paramSymbol != null) {
                     return paramSymbol;
                 }
-            } else {
-                if (parent == null) {
-                    return null;
-                } else {
-                    return parent.lookup(key);
-                }
             }
-        } else {
-            return found;
+
+            if (parent == null) {
+                throw new RuntimeException("undefined symbol");
+            } else {
+                return parent.lookup(key);
+            }
         }
     }
 

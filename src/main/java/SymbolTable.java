@@ -8,23 +8,23 @@ public class SymbolTable {
     public SymbolTable() {
         rootScope = new Scope(null);
 
-        ArrayList<VariableSymbol> printiParams = new ArrayList<VariableSymbol>();
-        ArrayList<VariableSymbol> printfParams = new ArrayList<VariableSymbol>();
-        ArrayList<VariableSymbol> notParams = new ArrayList<VariableSymbol>();
-        ArrayList<VariableSymbol> exitParams = new ArrayList<VariableSymbol>();
+        ArrayList<Symbol> printiParams = new ArrayList<Symbol>();
+        ArrayList<Symbol> printfParams = new ArrayList<Symbol>();
+        ArrayList<Symbol> notParams = new ArrayList<Symbol>();
+        ArrayList<Symbol> exitParams = new ArrayList<Symbol>();
 
-        printiParams.add(new VariableSymbol("i", "int"));
-        printfParams.add(new VariableSymbol("f", "fixedpt"));
-        notParams.add(new VariableSymbol("i", "int"));
-        exitParams.add(new VariableSymbol("i", "int"));
+        printiParams.add(new Symbol("i", "int"));
+        printfParams.add(new Symbol("f", "fixedpt"));
+        notParams.add(new Symbol("i", "int"));
+        exitParams.add(new Symbol("i", "int"));
 
-        rootScope.addSymbol("printi", new FunctionSymbol("printi", "void", printiParams));
-        rootScope.addSymbol("printf", new FunctionSymbol("printf", "void", printfParams));
-        rootScope.addSymbol("readi", new FunctionSymbol("readi", "int", new ArrayList<VariableSymbol>()));
-        rootScope.addSymbol("readf", new FunctionSymbol("readf", "fixedpt", new ArrayList<VariableSymbol>()));
-        rootScope.addSymbol("flush", new FunctionSymbol("flush", "void", new ArrayList<VariableSymbol>()));
-        rootScope.addSymbol("not", new FunctionSymbol("not", "int", notParams));
-        rootScope.addSymbol("exit", new FunctionSymbol("exit", "void", exitParams));
+        rootScope.addSymbol("printi", new Symbol("printi", "void", printiParams));
+        rootScope.addSymbol("printf", new Symbol("printf", "void", printfParams));
+        rootScope.addSymbol("readi", new Symbol("readi", "int", new ArrayList<Symbol>()));
+        rootScope.addSymbol("readf", new Symbol("readf", "fixedpt", new ArrayList<Symbol>()));
+        rootScope.addSymbol("flush", new Symbol("flush", "void", new ArrayList<Symbol>()));
+        rootScope.addSymbol("not", new Symbol("not", "int", notParams));
+        rootScope.addSymbol("exit", new Symbol("exit", "void", exitParams));
 
     }
 
@@ -38,18 +38,13 @@ public class SymbolTable {
         return child;
     }
 
-    public boolean addSymbol(Scope scope, BaseTree tree) {
+    public void addSymbol(Scope scope, BaseTree tree) {
         if (tree.getType() == TigerLexer.TYPE) {
             addType(scope, tree);
-            return true;
         } else if (tree.getType() == TigerLexer.VAR) {
             addVar(scope, tree);
-            return true;
         } else if (tree.getType() == TigerLexer.FUNCTION) {
             addFunction(scope, tree);
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -60,9 +55,8 @@ public class SymbolTable {
             if (arrayTree.getChildren().size() == 2) {
                 scope.addSymbol(
                         typeTree.getChild(1).toString(),
-                        new ArrayTypeSymbol(
+                        new Symbol(
                                 typeTree.getChild(1).toString(),
-                                typeTree.getChild(0).toString(),
                                 arrayTree.getChild(0).toString(),
                                 Integer.parseInt(arrayTree.getChild(1).toString())
                         )
@@ -70,9 +64,8 @@ public class SymbolTable {
             } else if (arrayTree.getChildren().size() == 3) {
                 scope.addSymbol(
                         typeTree.getChild(1).toString(),
-                        new Array2DTypeSymbol(
+                        new Symbol(
                                 typeTree.getChild(1).toString(),
-                                typeTree.getChild(0).toString(),
                                 arrayTree.getChild(0).toString(),
                                 Integer.parseInt(arrayTree.getChild(1).toString()),
                                 Integer.parseInt(arrayTree.getChild(2).toString())
@@ -82,7 +75,7 @@ public class SymbolTable {
         } else {
             scope.addSymbol(
                     typeTree.getChild(1).toString(),
-                    new TypeSymbol(typeTree.getChild(1).toString(), typeTree.getChild(0).toString())
+                    new Symbol(typeTree.getChild(1).toString(), typeTree.getChild(0).toString())
             );
         }
     }
@@ -97,26 +90,26 @@ public class SymbolTable {
         for (int i = 1; i < lastVar; i ++) {
             scope.addSymbol(
                     varTree.getChild(i).toString(),
-                    new VariableSymbol(varTree.getChild(i).toString(), varTree.getChild(0).toString())
+                    new Symbol(varTree.getChild(i).toString(), varTree.getChild(0).toString())
             );
         }
     }
 
     private void addFunction(Scope scope, BaseTree functionTree) {
-        ArrayList<VariableSymbol> params = new ArrayList<VariableSymbol>();
+        ArrayList<Symbol> params = new ArrayList<Symbol>();
         BaseTree paramsTree = (BaseTree) functionTree.getChild(2);
         BaseTree paramTree;
 
         if (paramsTree.getType() == TigerLexer.PARAMS) {
             for (int i = 0; i < paramsTree.getChildren().size(); i ++) {
                 paramTree = (BaseTree) paramsTree.getChild(i);
-                params.add(new VariableSymbol(paramTree.getChild(1).toString(), paramTree.getChild(0).toString()));
+                params.add(new Symbol(paramTree.getChild(1).toString(), paramTree.getChild(0).toString()));
             }
         }
 
         scope.addSymbol(
                 functionTree.getChild(1).toString(),
-                new FunctionSymbol(functionTree.getChild(1).toString(), functionTree.getChild(0).toString(), params)
+                new Symbol(functionTree.getChild(1).toString(), functionTree.getChild(0).toString(), params)
         );
     }
 
