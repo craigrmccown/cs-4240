@@ -58,6 +58,14 @@ public class Scope {
         }
     }
 
+    public Symbol lookupDataType(Symbol symbol) {
+        if (symbol.getDataType().equals("int") || symbol.getDataType().equals("fixedpt")) {
+            return symbol;
+        } else {
+            return lookup(symbol.getDataType());
+        }
+    }
+
     public List<Scope> getChildren() {
         return children;
     }

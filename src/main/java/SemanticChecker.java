@@ -21,7 +21,26 @@ public class SemanticChecker {
             if (subTree.isVariableReference()) {
                 TigerTree variableTree = (TigerTree) subTree.getChild(0);
                 Symbol symbol = currentScope.lookup(variableTree.toString());
-                subTree.setDataType(symbol.getDataType());
+                Symbol typeSymbol = currentScope.lookupDataType(symbol);
+                String dataType;
+
+                if (typeSymbol.getSymbolType() == Symbol.ARRAYTYPE && variableTree.getChildren() != null) {
+                    if (variableTree.getChildren().size() == 1) {
+                        dataType = typeSymbol.getDataType();
+                    } else {
+                        throw new RuntimeException("error on line " + subTree.getLine() + ": one dimensional array types must be dereferenced exactly once, or not at all.");
+                    }
+                } else if (typeSymbol.getSymbolType() == Symbol.ARRAY2DTYPE && variableTree.getChildren() != null) {
+                    if (variableTree.getChildren().size() == 2) {
+                        dataType = typeSymbol.getDataType();
+                    } else {
+                        throw new RuntimeException("error on line " + subTree.getLine() + ": two dimensional array types must be dereferenced exactly twice, or not at all.");
+                    }
+                } else {
+                    dataType = symbol.getDataType();
+                }
+
+                subTree.setDataType(dataType);
                 return;
             } else if (subTree.isLiteral()) {
                 return;
@@ -56,7 +75,7 @@ public class SemanticChecker {
                 } else if (left.getDataType().equals(right.getDataType())) {
                     subTree.setDataType(left.getDataType());
                 } else {
-                    throw new RuntimeException("error on line " + subTree.getLine() + ": unsupported type for binary operator '" + subTree.getText() + "'");
+                    throw new RuntimeException("error on line " + subTree.getLine() + ": mismatched operands for binary operator '" + subTree.getText() + "'");
                 }
             }
         }
