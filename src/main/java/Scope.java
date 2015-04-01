@@ -66,6 +66,14 @@ public class Scope {
         }
     }
 
+    public Symbol getFunctionDeclaration() {
+        if (functionKey != null) {
+            return lookup(functionKey);
+        } else {
+            return parent.getFunctionDeclaration();
+        }
+    }
+
     public List<Scope> getChildren() {
         return children;
     }

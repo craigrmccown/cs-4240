@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,11 +15,14 @@ public class Symbol {
     private int size;
     private int size2d;
     private Map<String, Symbol> parameters;
+    private ArrayList<Symbol> orderedParameters;
 
     public Symbol(String name, String dataType) {
         this.name = name;
         this.dataType = dataType;
         this.symbolType = VARTYPE;
+        this.parameters = new HashMap<String, Symbol>();
+        this.orderedParameters = new ArrayList<Symbol>();
     }
 
     public Symbol(String name, String dataType, int size) {
@@ -37,10 +41,9 @@ public class Symbol {
         this(name, dataType);
 
         if (parameters != null) {
-            this.parameters = new HashMap<String, Symbol>();
-
             for (Symbol symbol : parameters) {
                 this.parameters.put(symbol.name, symbol);
+                this.orderedParameters.add(symbol);
             }
         }
 
@@ -56,6 +59,10 @@ public class Symbol {
     public int getSize2d() { return size2d; }
 
     public Symbol getParameter(String key) { return parameters.get(key); }
+
+    public Symbol getParameter(int i) { return orderedParameters.get(i); }
+
+    public int getNumParameters() { return parameters.size(); }
 
     public int getSymbolType() {
         return this.symbolType;

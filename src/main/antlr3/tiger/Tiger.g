@@ -54,6 +54,7 @@ tokens {
     PARAM;
     BLOCK;
     VALUE;
+    FUNCTION_CALL;
 }
 
 ID
@@ -210,7 +211,7 @@ stat_else
     ;
 
 funct_call_or_assignment[Token id]
-    : OPENPAREN expr_list CLOSEPAREN -> ^({new TigerTree($id)} expr_list?)
+    : OPENPAREN expr_list CLOSEPAREN -> ^(FUNCTION_CALL ^({new TigerTree($id)} expr_list?))
     | value_index ASSIGNMENT_OP stat_expr -> ^(ASSIGNMENT_OP ^(VALUE ^({new TigerTree($id)} value_index?)) stat_expr?)
     ;
 
@@ -220,7 +221,7 @@ stat_expr
     ;
 
 funct_call_or_v_expr[Token id]
-    : OPENPAREN expr_list CLOSEPAREN -> ^({new TigerTree($id)} expr_list?)
+    : OPENPAREN expr_list CLOSEPAREN -> ^(FUNCTION_CALL ^({new TigerTree($id)} expr_list?))
     | v_expr[$id]
     ;
 

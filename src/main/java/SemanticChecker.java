@@ -77,6 +77,33 @@ public class SemanticChecker {
                 } else {
                     throw new RuntimeException("error on line " + subTree.getLine() + ": mismatched operands for binary operator '" + subTree.getText() + "'");
                 }
+            } else if (subTree.isReturnStatement()) {
+                TigerTree returnTree = (TigerTree) subTree.getChild(0);
+                Symbol functionSymbol = currentScope.getFunctionDeclaration();
+
+                if (functionSymbol.getDataType().equals("VOID")) {
+                    throw new RuntimeException("error on line " + subTree.getLine() + ": cannot return value from void function '" + functionSymbol.getName() + "'.");
+                } else if (!returnTree.getDataType().equals(functionSymbol.getDataType())) {
+                    throw new RuntimeException("error on line " + subTree.getLine() + ": mismatched return type. '" + functionSymbol.getDataType() + "' expected.");
+                }
+            } else if (subTree.isFunctionCall()) {
+                TigerTree functionCallTree = (TigerTree) subTree.getChild(0);
+                Symbol functionSymbol = currentScope.lookup(functionCallTree.toString());
+                int numArgs = 0;
+
+                if (functionCallTree.getChildren() != null) {
+                    numArgs = functionCallTree.getChildren().size();
+                }
+
+                if (numArgs != functionSymbol.getNumParameters()) {
+                    throw new RuntimeException("you suck");
+                }
+
+                for (int i = 0; i < functionSymbol.getNumParameters(); i ++) {
+                    if (!functionSymbol.getParameter(i).getDataType().equals(((TigerTree) functionCallTree.getChild(i)).getDataType())) {
+                        throw new RuntimeException("error on line " + subTree.getLine() + ": argument types do not match parameter types in funciton definition.");
+                    }
+                }
             }
         }
     }

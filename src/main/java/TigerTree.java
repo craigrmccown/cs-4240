@@ -44,6 +44,14 @@ public class TigerTree extends CommonTree {
         return getType() == TigerLexer.VALUE;
     }
 
+    public boolean isReturnStatement() {
+        return getType() == TigerLexer.RETURN;
+    }
+
+    public boolean isFunctionCall() {
+        return getType() == TigerLexer.FUNCTION_CALL;
+    }
+
     public boolean isFunctionBody() {
         return isBlock() && parent.getType() == TigerLexer.FUNCTION;
     }
