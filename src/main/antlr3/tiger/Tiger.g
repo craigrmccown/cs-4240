@@ -182,7 +182,7 @@ id_list_tail
     ;
 
 optional_init
-    : ASSIGNMENT_OP constant -> ^(ASSIGNMENT_OP constant)
+    : ASSIGNMENT_OP! constant
     |
     ;
 
