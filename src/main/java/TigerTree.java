@@ -46,6 +46,10 @@ public class TigerTree extends CommonTree {
                 getType() == TigerLexer.EQUALS;
     }
 
+    public boolean isAssignmentOperator() {
+        return getType() == TigerLexer.ASSIGNMENT_OP;
+    }
+
     public boolean isVariableReference() {
         return getType() == TigerLexer.VALUE;
     }
