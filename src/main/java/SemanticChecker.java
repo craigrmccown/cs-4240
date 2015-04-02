@@ -46,33 +46,6 @@ public class SemanticChecker {
             }
 
             return;
-        } else if (subTree.isFunctionCall()) {
-            // check that the number and type of parameters match those
-            // of the function declaration and set the correct data type
-            // to the function call.
-
-            TigerTree functionCallTree = (TigerTree) subTree.getChild(0);
-            Symbol functionSymbol = currentScope.lookup(functionCallTree.toString());
-            int numArgs = 0;
-
-            if (functionCallTree.getChildren() != null) {
-                numArgs = functionCallTree.getChildren().size();
-            }
-
-            if (numArgs != functionSymbol.getNumParameters()) {
-                raiseError("wrong number of arguments passed to function '" + functionSymbol.getName() + "'", subTree.getLine());
-            }
-
-            for (int i = 0; i < functionSymbol.getNumParameters(); i++) {
-                String dataType = resolveDataTypes(functionSymbol.getParameter(i).getDataType(), ((TigerTree) functionCallTree.getChild(i)).getDataType());
-
-                if (dataType == null || !dataType.equals(functionSymbol.getParameter(i).getDataType())) {
-                    raiseError("argument types do not match parameter types in function definition", subTree.getLine());
-                }
-            }
-
-            subTree.setDataType(functionSymbol.getDataType());
-            return;
         }
 
         // recurse to children and build symbol table
@@ -150,6 +123,45 @@ public class SemanticChecker {
                     raiseError("function contains return statements with mismatched types", subTree.getLine());
                 }
             }
+        } else if (subTree.isOptionalInit()) {
+            TigerTree constantTree, typeTree;
+            String dataType;
+
+            constantTree = (TigerTree) subTree.getChild(0);
+            typeTree = (TigerTree) subTree.parent.getChild(0);
+
+            dataType = resolveDataTypes(constantTree.getDataType(), typeTree.toString());
+
+            if (dataType == null || !dataType.equals(typeTree.toString())) {
+                raiseError("cannot assign value of type '" + constantTree.getDataType() + "' to variable of type '" + typeTree.toString() + "'", subTree.getLine());
+            }
+        } else if (subTree.isFunctionCall()) {
+            // check that the number and type of parameters match those
+            // of the function declaration and set the correct data type
+            // to the function call.
+
+            TigerTree functionCallTree = (TigerTree) subTree.getChild(0);
+            Symbol functionSymbol = currentScope.lookup(functionCallTree.toString());
+            int numArgs = 0;
+
+            if (functionCallTree.getChildren() != null) {
+                numArgs = functionCallTree.getChildren().size();
+            }
+
+            if (numArgs != functionSymbol.getNumParameters()) {
+                raiseError("wrong number of arguments passed to function '" + functionSymbol.getName() + "'", subTree.getLine());
+            }
+
+            for (int i = 0; i < functionSymbol.getNumParameters(); i++) {
+                String dataType = resolveDataTypes(functionSymbol.getParameter(i).getDataType(), ((TigerTree) functionCallTree.getChild(i)).getDataType());
+
+                if (dataType == null || !dataType.equals(functionSymbol.getParameter(i).getDataType())) {
+                    raiseError("argument types do not match parameter types in function definition", subTree.getLine());
+                }
+            }
+
+            subTree.setDataType(functionSymbol.getDataType());
+            return;
         }
 
         if (subTree.getReturnType() != null && !subTree.isFunctionDeclaration()) {
