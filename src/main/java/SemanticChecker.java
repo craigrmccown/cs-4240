@@ -46,6 +46,33 @@ public class SemanticChecker {
             }
 
             return;
+        } else if (subTree.isFunctionCall()) {
+            // check that the number and type of parameters match those
+            // of the function declaration and set the correct data type
+            // to the function call.
+
+            TigerTree functionCallTree = (TigerTree) subTree.getChild(0);
+            Symbol functionSymbol = currentScope.lookup(functionCallTree.toString());
+            int numArgs = 0;
+
+            if (functionCallTree.getChildren() != null) {
+                numArgs = functionCallTree.getChildren().size();
+            }
+
+            if (numArgs != functionSymbol.getNumParameters()) {
+                raiseError("wrong number of arguments passed to function '" + functionSymbol.getName() + "'", subTree.getLine());
+            }
+
+            for (int i = 0; i < functionSymbol.getNumParameters(); i++) {
+                String dataType = resolveDataTypes(functionSymbol.getParameter(i).getDataType(), ((TigerTree) functionCallTree.getChild(i)).getDataType());
+
+                if (dataType == null || !dataType.equals(functionSymbol.getParameter(i).getDataType())) {
+                    raiseError("argument types do not match parameter types in function definition", subTree.getLine());
+                }
+            }
+
+            subTree.setDataType(functionSymbol.getDataType());
+            return;
         }
 
         // recurse to children and build symbol table
@@ -63,7 +90,22 @@ public class SemanticChecker {
         }
 
         // post order traversal
-        if (subTree.isBinaryOperator()) {
+        if (subTree.isAssignmentOperator()) {
+            // check that the right side of the assignment
+            // can resolve to the same type of the left side
+            // of the assignment.
+
+            TigerTree left, right;
+            String dataType;
+
+            left = (TigerTree) subTree.getChild(0);
+            right = (TigerTree) subTree.getChild(1);
+            dataType = resolveDataTypes(left.getDataType(), right.getDataType());
+
+            if (dataType == null || !dataType.equals(left.getDataType())) {
+                raiseError("cannot assign value of type '" + right.getDataType() + "' to variable of type '" + left.getDataType() + "'", subTree.getLine());
+            }
+        } else if (subTree.isBinaryOperator()) {
             // set the data type of the current tree by
             // resolving the types of its left and right child.
             // if resolution fails, an error is raised.
@@ -90,29 +132,7 @@ public class SemanticChecker {
             parentTree = (TigerTree) subTree.parent;
 
             parentTree.setReturnType(returnTree.getDataType());
-        } else if (subTree.isFunctionCall()) {
-            // check that the number and type of parameters match those
-            // of the function declaration.
 
-            TigerTree functionCallTree = (TigerTree) subTree.getChild(0);
-            Symbol functionSymbol = currentScope.lookup(functionCallTree.toString());
-            int numArgs = 0;
-
-            if (functionCallTree.getChildren() != null) {
-                numArgs = functionCallTree.getChildren().size();
-            }
-
-            if (numArgs != functionSymbol.getNumParameters()) {
-                raiseError("wrong number of arguments passed to function '" + functionSymbol.getName() + "'", subTree.getLine());
-            }
-
-            for (int i = 0; i < functionSymbol.getNumParameters(); i ++) {
-                String dataType = resolveDataTypes(functionSymbol.getParameter(i).getDataType(), ((TigerTree) functionCallTree.getChild(i)).getDataType());
-
-                if (dataType == null || !dataType.equals(functionSymbol.getParameter(i).getDataType())) {
-                    raiseError("argument types do not match parameter types in function definition", subTree.getLine());
-                }
-            }
         } else if (subTree.isFunctionDeclaration()) {
             // check that the return type of the function body matches
             // the return type of the function.
@@ -160,7 +180,7 @@ public class SemanticChecker {
         // resolves two data types. if mixed 'int' and 'fixedpt',
         // return fixedpt. if the two types are equal, return that
         // type. otherwise, return null.
-        
+
         if (
             dataType1.equals("fixedpt") && dataType2.equals("fixedpt") ||
             dataType1.equals("int") && dataType2.equals("fixedpt") ||
