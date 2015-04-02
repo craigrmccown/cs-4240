@@ -20,6 +20,11 @@ public class SemanticChecker {
         } else if (subTree.isLiteral()) {
             return;
         } else if (subTree.isVariableReference()) {
+            // set the data type of the variable reference to the
+            // correct type. if the variable reference includes an
+            // array dereference, first check if the dereference is
+            // legal.
+
             TigerTree variableTree = (TigerTree) subTree.getChild(0);
             Symbol symbol = currentScope.lookup(variableTree.toString());
             Symbol typeSymbol = currentScope.lookupDataType(symbol);
@@ -59,6 +64,10 @@ public class SemanticChecker {
 
         // post order traversal
         if (subTree.isBinaryOperator()) {
+            // set the data type of the current tree by
+            // resolving the types of its left and right child.
+            // if resolution fails, an error is raised.
+
             TigerTree left, right;
             String dataType;
 
@@ -72,6 +81,9 @@ public class SemanticChecker {
                 raiseError("mismatched operands for binary operator '" + subTree.getText() + "'", subTree.getLine());
             }
         } else if (subTree.isReturnStatement()) {
+            // set the return type of the parent to the type of
+            // the return expression.
+
             TigerTree returnTree, parentTree;
 
             returnTree = (TigerTree) subTree.getChild(0);
@@ -79,6 +91,9 @@ public class SemanticChecker {
 
             parentTree.setReturnType(returnTree.getDataType());
         } else if (subTree.isFunctionCall()) {
+            // check that the number and type of parameters match those
+            // of the function declaration.
+
             TigerTree functionCallTree = (TigerTree) subTree.getChild(0);
             Symbol functionSymbol = currentScope.lookup(functionCallTree.toString());
             int numArgs = 0;
@@ -92,11 +107,16 @@ public class SemanticChecker {
             }
 
             for (int i = 0; i < functionSymbol.getNumParameters(); i ++) {
-                if (!functionSymbol.getParameter(i).getDataType().equals(((TigerTree) functionCallTree.getChild(i)).getDataType())) {
+                String dataType = resolveDataTypes(functionSymbol.getParameter(i).getDataType(), ((TigerTree) functionCallTree.getChild(i)).getDataType());
+
+                if (dataType == null || !dataType.equals(functionSymbol.getParameter(i).getDataType())) {
                     raiseError("argument types do not match parameter types in function definition", subTree.getLine());
                 }
             }
         } else if (subTree.isFunctionDeclaration()) {
+            // check that the return type of the function body matches
+            // the return type of the function.
+
             Symbol declarationSymbol = currentScope.lookup(subTree.getChild(1).toString());
 
             if (declarationSymbol.getDataType().equals("VOID")) {
@@ -113,6 +133,10 @@ public class SemanticChecker {
         }
 
         if (subTree.getReturnType() != null && !subTree.isFunctionDeclaration()) {
+            // propagate the return type attribute up the tree. if
+            // the parent already has a return type, check if the existing
+            // return type conflicts with the current node's return type.
+
             TigerTree parentTree;
             String returnType;
 
@@ -133,6 +157,10 @@ public class SemanticChecker {
     }
 
     private String resolveDataTypes(String dataType1, String dataType2) {
+        // resolves two data types. if mixed 'int' and 'fixedpt',
+        // return fixedpt. if the two types are equal, return that
+        // type. otherwise, return null.
+        
         if (
             dataType1.equals("fixedpt") && dataType2.equals("fixedpt") ||
             dataType1.equals("int") && dataType2.equals("fixedpt") ||
