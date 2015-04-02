@@ -3,6 +3,7 @@ import org.antlr.runtime.tree.CommonTree;
 
 public class TigerTree extends CommonTree {
     private String dataType;
+    private String returnType;
 
     public TigerTree(Token token) {
         super(token);
@@ -37,6 +38,11 @@ public class TigerTree extends CommonTree {
                 getType() == TigerLexer.DIVIDE ||
                 getType() == TigerLexer.BIT_AND ||
                 getType() == TigerLexer.BIT_OR ||
+                getType() == TigerLexer.NOT_EQUAL ||
+                getType() == TigerLexer.LESS_THAN ||
+                getType() == TigerLexer.LESS_THAN_EQUAL ||
+                getType() == TigerLexer.GREATER_THAN ||
+                getType() == TigerLexer.GREATER_THAN_EQUAL ||
                 getType() == TigerLexer.EQUALS;
     }
 
@@ -56,6 +62,8 @@ public class TigerTree extends CommonTree {
         return isBlock() && parent.getType() == TigerLexer.FUNCTION;
     }
 
+    public boolean isFunctionDeclaration() { return getType() == TigerLexer.FUNCTION; }
+
     public String getFunctionKey() {
         return isFunctionBody() ? parent.getChild(1).toString() : null;
     }
@@ -66,5 +74,13 @@ public class TigerTree extends CommonTree {
 
     public String getDataType() {
         return dataType;
+    }
+
+    public void setReturnType(String returnType) {
+        this.returnType = returnType;
+    }
+
+    public String getReturnType() {
+        return returnType;
     }
 }

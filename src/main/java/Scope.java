@@ -4,10 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 public class Scope {
-    public final static int VOID = 0;
-    public final static int INTTYPE = 1;
-    public final static int FIXEDPTTYPE = 2;
-
     private String functionKey;
     private Scope parent;
     private Map<String, Symbol> symbols;
@@ -63,14 +59,6 @@ public class Scope {
             return symbol;
         } else {
             return lookup(symbol.getDataType());
-        }
-    }
-
-    public Symbol getFunctionDeclaration() {
-        if (functionKey != null) {
-            return lookup(functionKey);
-        } else {
-            return parent.getFunctionDeclaration();
         }
     }
 
