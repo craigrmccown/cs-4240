@@ -18,13 +18,13 @@ public class SymbolTable {
         notParams.add(new Symbol("i", "int"));
         exitParams.add(new Symbol("i", "int"));
 
-        rootScope.addSymbol("printi", new Symbol("printi", "void", printiParams));
-        rootScope.addSymbol("printf", new Symbol("printf", "void", printfParams));
+        rootScope.addSymbol("printi", new Symbol("printi", "VOID", printiParams));
+        rootScope.addSymbol("printf", new Symbol("printf", "VOID", printfParams));
         rootScope.addSymbol("readi", new Symbol("readi", "int", new ArrayList<Symbol>()));
         rootScope.addSymbol("readf", new Symbol("readf", "fixedpt", new ArrayList<Symbol>()));
-        rootScope.addSymbol("flush", new Symbol("flush", "void", new ArrayList<Symbol>()));
+        rootScope.addSymbol("flush", new Symbol("flush", "VOID", new ArrayList<Symbol>()));
         rootScope.addSymbol("not", new Symbol("not", "int", notParams));
-        rootScope.addSymbol("exit", new Symbol("exit", "void", exitParams));
+        rootScope.addSymbol("exit", new Symbol("exit", "VOID", exitParams));
 
     }
 

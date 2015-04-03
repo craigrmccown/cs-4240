@@ -32,33 +32,44 @@ public class Scope {
         }
     }
 
+    public Symbol getSymbol(String key) {
+        Symbol symbol =  symbols.get(key);
+
+        if (symbol == null && functionKey != null) {
+            Symbol paramSymbol = parent.getSymbol(functionKey).getParameter(key);
+
+            if (paramSymbol != null) {
+                symbol = paramSymbol;
+            }
+        }
+
+        return symbol;
+    }
+
     public Symbol lookup(String key) {
-        Symbol found = symbols.get(key);
+        Scope x = lookupScope(key);
+        return x.getSymbol(key);
+    }
+
+    public Scope lookupScope(String key) {
+        Symbol found = getSymbol(key);
 
         if (found != null) {
-            return found;
+            return this;
         } else {
-            if (functionKey != null) {
-                Symbol paramSymbol = parent.lookup(functionKey).getParameter(key);
-
-                if (paramSymbol != null) {
-                    return paramSymbol;
-                }
-            }
-
             if (parent == null) {
                 throw new RuntimeException("undefined symbol");
             } else {
-                return parent.lookup(key);
+                return parent.lookupScope(key);
             }
         }
     }
 
-    public Symbol lookupDataType(Symbol symbol) {
-        if (symbol.getDataType().equals("int") || symbol.getDataType().equals("fixedpt")) {
-            return symbol;
+    public Scope getDataTypeScope(Symbol symbol) {
+        if (symbol.getDataType().equals("int") || symbol.getDataType().equals("fixedpt") || symbol.getDataType().equals("VOID")) {
+            return null;
         } else {
-            return lookup(symbol.getDataType());
+            return lookupScope(symbol.getDataType());
         }
     }
 

@@ -25,24 +25,34 @@ public class SemanticChecker {
             // array dereference, first check if the dereference is
             // legal.
 
-            TigerTree variableTree = (TigerTree) subTree.getChild(0);
-            Symbol symbol = currentScope.lookup(variableTree.toString());
-            Symbol typeSymbol = currentScope.lookupDataType(symbol);
+            TigerTree variableTree;
+            Symbol symbol, typeSymbol;
+            Scope typeScope;
+
+            variableTree = (TigerTree) subTree.getChild(0);
+            symbol = currentScope.lookup(variableTree.toString());
+            typeScope = currentScope.getDataTypeScope(symbol);
+
+            if (typeScope == null) {
+                typeSymbol = symbol;
+            } else {
+                typeSymbol = typeScope.getSymbol(symbol.getDataType());
+            }
 
             if (variableTree.getChildren() == null) {
-                subTree.setDataType(symbol.getDataType());
+                subTree.setDataType(symbol.getDataType(), typeScope);
             } else if (typeSymbol.getSymbolType() == Symbol.ARRAYTYPE) {
                 if (variableTree.getChildren().size() != 1) {
                     raiseError("one dimensional array types must be dereferenced exactly once, or not at all.", subTree.getLine());
                 }
 
-                subTree.setDataType(typeSymbol.getDataType());
+                subTree.setDataType(typeSymbol.getDataType(), null);
             } else if (typeSymbol.getSymbolType() == Symbol.ARRAY2DTYPE) {
                 if (variableTree.getChildren().size() != 2) {
                     raiseError("two dimensional array types must be dereferenced exactly twice, or not at all.", subTree.getLine());
                 }
 
-                subTree.setDataType(typeSymbol.getDataType());
+                subTree.setDataType(typeSymbol.getDataType(), null);
             }
 
             return;
@@ -73,27 +83,33 @@ public class SemanticChecker {
 
             left = (TigerTree) subTree.getChild(0);
             right = (TigerTree) subTree.getChild(1);
-            dataType = resolveDataTypes(left.getDataType(), right.getDataType());
+            dataType = resolveLeftTypeEquivalence(left, right);
 
-            if (dataType == null || !dataType.equals(left.getDataType())) {
+            if (dataType == null) {
                 raiseError("cannot assign value of type '" + right.getDataType() + "' to variable of type '" + left.getDataType() + "'", subTree.getLine());
             }
-        } else if (subTree.isBinaryOperator()) {
+        } else if (subTree.isArithmeticOperator() || subTree.isConditionalOperator()) {
             // set the data type of the current tree by
             // resolving the types of its left and right child.
-            // if resolution fails, an error is raised.
+            // if resolution fails, an error is raised. the
+            // data type is set to @boolean if the operator produces
+            // a boolean expression.
 
             TigerTree left, right;
             String dataType;
 
             left = (TigerTree) subTree.getChild(0);
             right = (TigerTree) subTree.getChild(1);
-            dataType = resolveDataTypes(left.getDataType(), right.getDataType());
+            dataType = resolveTypeEquivalence(left, right);
 
             if (dataType != null) {
-                subTree.setDataType(dataType);
+                if (subTree.isConditionalOperator()) {
+                    subTree.setDataType("@boolean", null);
+                } else {
+                    subTree.setDataType(dataType, left.getDataTypeScope());
+                }
             } else {
-                raiseError("mismatched operands for binary operator '" + subTree.getText() + "'", subTree.getLine());
+                raiseError("mismatched operands for binary operator '" + subTree.getText() + "'. got types '" + left.getDataType() + "' and '" + right.getDataType() + "'", subTree.getLine());
             }
         } else if (subTree.isReturnStatement()) {
             // set the return type of the parent to the type of
@@ -104,13 +120,18 @@ public class SemanticChecker {
             returnTree = (TigerTree) subTree.getChild(0);
             parentTree = (TigerTree) subTree.parent;
 
-            parentTree.setReturnType(returnTree.getDataType());
-
+            if (parentTree.getReturnType() != null) {
+                raiseError("unreachable return statement", subTree.getLine());
+            } else {
+                parentTree.setReturnType(returnTree.getDataType(), returnTree.getDataTypeScope());
+            }
         } else if (subTree.isFunctionDeclaration()) {
             // check that the return type of the function body matches
             // the return type of the function.
 
-            Symbol declarationSymbol = currentScope.lookup(subTree.getChild(1).toString());
+            Scope declarationScope = currentScope.lookupScope(subTree.getChild(1).toString());
+            Symbol declarationSymbol = declarationScope.getSymbol(subTree.getChild(1).toString());
+            Scope declarationTypeScope = declarationScope.getDataTypeScope(declarationSymbol);
 
             if (declarationSymbol.getDataType().equals("VOID")) {
                 if (subTree.getReturnType() != null) {
@@ -119,11 +140,14 @@ public class SemanticChecker {
             } else {
                 if (subTree.getReturnType() == null) {
                     raiseError("non-void function must return a value", subTree.getLine());
-                } else if (!declarationSymbol.getDataType().equals(resolveDataTypes(declarationSymbol.getDataType(), subTree.getReturnType()))) {
+                } else if (!subTree.getReturnType().equals(declarationSymbol.getDataType()) || subTree.getReturnTypeScope() != declarationTypeScope) {
                     raiseError("function contains return statements with mismatched types", subTree.getLine());
                 }
             }
         } else if (subTree.isOptionalInit()) {
+            // check that the data type of the var declaration matches
+            // the type of the initialization constant.
+
             TigerTree constantTree, typeTree;
             String dataType;
 
@@ -140,9 +164,16 @@ public class SemanticChecker {
             // of the function declaration and set the correct data type
             // to the function call.
 
-            TigerTree functionCallTree = (TigerTree) subTree.getChild(0);
-            Symbol functionSymbol = currentScope.lookup(functionCallTree.toString());
-            int numArgs = 0;
+            TigerTree functionCallTree;
+            Scope functionScope, typeScope;
+            Symbol functionSymbol;
+            int numArgs;
+
+            functionCallTree = (TigerTree) subTree.getChild(0);
+            functionScope = currentScope.lookupScope(functionCallTree.toString());
+            functionSymbol = functionScope.getSymbol(functionCallTree.toString());
+            typeScope = functionScope.getDataTypeScope(functionSymbol);
+            numArgs = 0;
 
             if (functionCallTree.getChildren() != null) {
                 numArgs = functionCallTree.getChildren().size();
@@ -160,8 +191,23 @@ public class SemanticChecker {
                 }
             }
 
-            subTree.setDataType(functionSymbol.getDataType());
-            return;
+            subTree.setDataType(functionSymbol.getDataType(), typeScope);
+        } else if (subTree.isWhileLoop()) {
+            // check that the while loop header is a boolean expression
+
+            TigerTree whileTree = (TigerTree) subTree.getChild(0);
+
+            if (!whileTree.getDataType().equals("@boolean")) {
+                raiseError("boolean expression required in while loop header, got '" + whileTree.getDataType() + "'", subTree.getLine());
+            }
+        } else if (subTree.isIfStatement()) {
+            // check that the if statement header is a boolean expression
+
+            TigerTree ifTree = (TigerTree) subTree.getChild(0);
+
+            if (!ifTree.getDataType().equals("@boolean")) {
+                raiseError("boolean expression required in if statement header, got '" + ifTree.getDataType() + "'", subTree.getLine());
+            }
         }
 
         if (subTree.getReturnType() != null && !subTree.isFunctionDeclaration()) {
@@ -175,16 +221,46 @@ public class SemanticChecker {
             parentTree = (TigerTree) subTree.parent;
 
             if (parentTree.getReturnType() != null) {
-                returnType = resolveDataTypes(parentTree.getReturnType(), subTree.getReturnType());
+                returnType = resolveReturnTypeEquivalence(parentTree, subTree);
 
                 if (returnType != null) {
-                    parentTree.setReturnType(returnType);
+                    parentTree.setReturnType(returnType, subTree.getReturnTypeScope());
                 } else {
                     raiseError("function returns conflicting types", subTree.getLine());
                 }
             } else {
-                parentTree.setReturnType(subTree.getReturnType());
+                parentTree.setReturnType(subTree.getReturnType(), subTree.getReturnTypeScope());
             }
+        }
+    }
+
+    private String resolveTypeEquivalence(TigerTree left, TigerTree right) {
+        String dataType = resolveDataTypes(left.getDataType(), right.getDataType());
+
+        if (dataType != null && left.getDataTypeScope() == right.getDataTypeScope()) {
+            return dataType;
+        } else {
+            return null;
+        }
+    }
+
+    private String resolveLeftTypeEquivalence(TigerTree left, TigerTree right) {
+        String dataType = resolveDataTypes(left.getDataType(), right.getDataType());
+
+        if (dataType != null && dataType.equals(left.getDataType()) && left.getDataTypeScope() == right.getDataTypeScope()) {
+            return dataType;
+        } else {
+            return null;
+        }
+    }
+
+    private String resolveReturnTypeEquivalence(TigerTree left, TigerTree right) {
+        String returnType = resolveDataTypes(left.getReturnType(), right.getReturnType());
+
+        if (returnType != null && left.getReturnTypeScope() == right.getReturnTypeScope()) {
+            return returnType;
+        } else {
+            return null;
         }
     }
 
