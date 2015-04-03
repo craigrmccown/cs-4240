@@ -46,6 +46,18 @@ public class TigerTree extends CommonTree {
                 getType() == TigerLexer.EQUALS;
     }
 
+    public boolean isArithmeticOperator() {
+        return getType() == TigerLexer.PLUS ||
+                getType() == TigerLexer.MINUS ||
+                getType() == TigerLexer.MULTIPLY ||
+                getType() == TigerLexer.DIVIDE;
+    }
+
+    public boolean isBooleanOperator() {
+        return getType() == TigerLexer.BIT_AND ||
+                getType() == TigerLexer.BIT_OR;
+    }
+
     public boolean isAssignmentOperator() {
         return getType() == TigerLexer.ASSIGNMENT_OP;
     }
@@ -67,6 +79,8 @@ public class TigerTree extends CommonTree {
     }
 
     public boolean isFunctionDeclaration() { return getType() == TigerLexer.FUNCTION; }
+
+    public boolean isIfStatement() { return getType() == TigerLexer.IF; }
 
     public String getFunctionKey() {
         return isFunctionBody() ? parent.getChild(1).toString() : null;

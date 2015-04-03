@@ -1,8 +1,10 @@
 public class SemanticChecker {
     private SymbolTable symbolTable;
+    private IRGenerator generator;
 
     public SemanticChecker() {
         this.symbolTable = new SymbolTable();
+        this.generator = new IRGenerator(this.symbolTable);
     }
 
     public SymbolTable getSymbolTable() {
@@ -174,6 +176,50 @@ public class SemanticChecker {
                 parentTree.setReturnType(subTree.getReturnType());
             }
         }
+    }
+
+    private void secondPass(TigerTree subTree) {
+        generate((TigerTree) subTree);
+    }
+
+    private String generate(TigerTree subTree) {
+        int opcode = -1;
+        if (subTree.isArithmeticOperator()) {
+            switch (subTree.getType()) {
+                case TigerLexer.PLUS:
+                    opcode = IntermediateCode.ADD;
+                    break;
+                case TigerLexer.MINUS:
+                    opcode = IntermediateCode.SUB;
+                    break;
+                case TigerLexer.MULTIPLY:
+                    opcode = IntermediateCode.MULT;
+                    break;
+                case TigerLexer.DIVIDE:
+                    opcode = IntermediateCode.DIV;
+                    break;
+                default:
+
+            }
+            String t1 = generate((TigerTree) subTree.getChild(0));
+            String t2 = generate((TigerTree) subTree.getChild(0));
+            String t3 = generator.createTemp(null);
+            generator.emit(opcode, t1, t2, t3);
+            return t3;
+        } else if (subTree.isBooleanOperator()) {
+            switch (subTree.getType()) {
+                case TigerLexer.BIT_AND:
+                    opcode = IntermediateCode.AND;
+                    break;
+                case TigerLexer.BIT_OR:
+                    opcode = IntermediateCode.OR;
+                    break;
+                default:
+                    System.out.println("something is seriously broken");
+            }
+
+        }
+        return "";
     }
 
     private String resolveDataTypes(String dataType1, String dataType2) {
