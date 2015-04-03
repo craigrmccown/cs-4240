@@ -18,13 +18,13 @@ public class SymbolTable {
         notParams.add(new Symbol("i", "int"));
         exitParams.add(new Symbol("i", "int"));
 
-        rootScope.addSymbol("printi", new Symbol("printi", "void", printiParams));
-        rootScope.addSymbol("printf", new Symbol("printf", "void", printfParams));
+        rootScope.addSymbol("printi", new Symbol("printi", "VOID", printiParams));
+        rootScope.addSymbol("printf", new Symbol("printf", "VOID", printfParams));
         rootScope.addSymbol("readi", new Symbol("readi", "int", new ArrayList<Symbol>()));
         rootScope.addSymbol("readf", new Symbol("readf", "fixedpt", new ArrayList<Symbol>()));
-        rootScope.addSymbol("flush", new Symbol("flush", "void", new ArrayList<Symbol>()));
+        rootScope.addSymbol("flush", new Symbol("flush", "VOID", new ArrayList<Symbol>()));
         rootScope.addSymbol("not", new Symbol("not", "int", notParams));
-        rootScope.addSymbol("exit", new Symbol("exit", "void", exitParams));
+        rootScope.addSymbol("exit", new Symbol("exit", "VOID", exitParams));
 
     }
 
@@ -38,7 +38,7 @@ public class SymbolTable {
         return child;
     }
 
-    public void addSymbol(Scope scope, BaseTree tree) {
+    public void addSymbol(Scope scope, TigerTree tree) {
         if (tree.getType() == TigerLexer.TYPE) {
             addType(scope, tree);
         } else if (tree.getType() == TigerLexer.VAR) {
@@ -48,7 +48,7 @@ public class SymbolTable {
         }
     }
 
-    private void addType(Scope scope, BaseTree typeTree) {
+    private void addType(Scope scope, TigerTree typeTree) {
         if (typeTree.getChild(0).getType() == TigerLexer.ARRAY) {
             BaseTree arrayTree = (BaseTree) typeTree.getChild(0);
 
@@ -80,10 +80,10 @@ public class SymbolTable {
         }
     }
 
-    private void addVar(Scope scope, BaseTree varTree) {
+    private void addVar(Scope scope, TigerTree varTree) {
         int lastVar = varTree.getChildren().size();
 
-        if (varTree.getChild(lastVar - 1).getType() == TigerLexer.ASSIGNMENT_OP) {
+        if ((varTree.getChild(lastVar - 1)).getType() == TigerLexer.OPTIONAL_INIT) {
             lastVar --;
         }
 
@@ -95,7 +95,7 @@ public class SymbolTable {
         }
     }
 
-    private void addFunction(Scope scope, BaseTree functionTree) {
+    private void addFunction(Scope scope, TigerTree functionTree) {
         ArrayList<Symbol> params = new ArrayList<Symbol>();
         BaseTree paramsTree = (BaseTree) functionTree.getChild(2);
         BaseTree paramTree;

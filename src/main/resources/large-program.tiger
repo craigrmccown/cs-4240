@@ -21,7 +21,7 @@ begin
             p[0] := 0;
             p[1] := 1;
             /* simplest way I could think of for an infinite loop */
-            while ((1 + 2 * 3) = ((1 + 2) * 3 - (2))) & 1 do
+            while ((1 + 2 * 3) = ((1 + 2) * 3 - (2))) & 1 = 1 do
             begin
                 value := fibonacci(0);
                 p[0] := p[1];
@@ -54,7 +54,9 @@ begin
     begin
         type Fake = array[2] of int;
         var ret : Matrix;
-        var i, j, k, sum : int;
+        var i, j, k : int;
+        var sum : fixedpt;
+
         for i := 0 to 2 do
             for j := 0 to 2 do
             begin

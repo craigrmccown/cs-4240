@@ -14,7 +14,7 @@ begin
 			endif;
 		enddo;
 		if counter <> loops then 
-			return 0; 
+			return 0;
 		else
 			return 1;
 		endif;
