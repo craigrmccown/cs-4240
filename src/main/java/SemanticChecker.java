@@ -14,6 +14,8 @@ public class SemanticChecker {
     }
 
     private void firstPass(TigerTree subTree, Scope currentScope) {
+        subTree.setCurrentScope(currentScope);
+
         // base cases
         if (subTree.getChildren() == null) {
             return;
@@ -129,9 +131,12 @@ public class SemanticChecker {
             // check that the return type of the function body matches
             // the return type of the function.
 
-            Scope declarationScope = currentScope.lookupScope(subTree.getChild(1).toString());
-            Symbol declarationSymbol = declarationScope.getSymbol(subTree.getChild(1).toString());
-            Scope declarationTypeScope = declarationScope.getDataTypeScope(declarationSymbol);
+            Scope declarationScope, declarationTypeScope;
+            Symbol declarationSymbol;
+
+            declarationScope = currentScope.lookupScope(subTree.getChild(1).toString());
+            declarationSymbol = declarationScope.getSymbol(subTree.getChild(1).toString());
+            declarationTypeScope = declarationScope.getDataTypeScope(declarationSymbol);
 
             if (declarationSymbol.getDataType().equals("VOID")) {
                 if (subTree.getReturnType() != null) {

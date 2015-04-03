@@ -6,6 +6,7 @@ public class TigerTree extends CommonTree {
     private String returnType;
     private Scope dataTypeScope;
     private Scope returnTypeScope;
+    private Scope currentScope;
 
     public TigerTree(Token token) {
         super(token);
@@ -111,5 +112,13 @@ public class TigerTree extends CommonTree {
 
     public Scope getReturnTypeScope() {
         return returnTypeScope;
+    }
+
+    public void setCurrentScope(Scope currentScope) {
+        this.currentScope = currentScope;
+    }
+
+    public Scope getCurrentScope() {
+        return currentScope;
     }
 }
