@@ -38,9 +38,17 @@ public class IRGenerator {
     }
 
     public String createTemp(Scope scope) {
-        while (scope.exists("t" + tempCount)) tempCount++;
+        //while (scope.exists("t" + tempCount)) tempCount++;
         String ret = "t" + tempCount;
         tempCount++;
         return ret;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (IntermediateCode ic : operations) {
+            sb.append(ic + "\n");
+        }
+        return sb.toString();
     }
 }

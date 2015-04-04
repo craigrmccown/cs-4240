@@ -73,6 +73,8 @@ public class TigerTree extends CommonTree {
                 getType() == TigerLexer.BIT_OR;
     }
 
+    public boolean isID() { return getType() == TigerLexer.ID; }
+
     public boolean isAssignmentOperator() {
         return getType() == TigerLexer.ASSIGNMENT_OP;
     }

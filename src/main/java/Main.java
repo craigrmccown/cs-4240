@@ -21,6 +21,7 @@ public class Main {
 
             SemanticChecker semanticChecker = new SemanticChecker();
             semanticChecker.check(tree);
+            System.out.println(semanticChecker.getGenerator());
 
             System.out.println(semanticChecker.getSymbolTable());
         } catch (IOException e) {

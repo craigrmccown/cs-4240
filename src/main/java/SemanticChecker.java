@@ -11,6 +11,10 @@ public class SemanticChecker {
         return symbolTable;
     }
 
+    public IRGenerator getGenerator() {
+        return generator;
+    }
+
     public void check(TigerTree parseTree) {
         firstPass(parseTree, symbolTable.getRootScope());
         secondPass(parseTree);
@@ -417,9 +421,15 @@ public class SemanticChecker {
                 params[i] = generate((TigerTree) paramTree.getChild(i));
             }
 
-            Scope functionScope = subTree.getCurrentScope().lookupScope(paramTree.toString());
-            Symbol functionSymbol = functionScope.getSymbol(paramTree.toString());
-            Scope typeScope = functionScope.getDataTypeScope(functionSymbol);
+            Symbol functionSymbol;
+
+            try {
+                Scope functionScope = subTree.getCurrentScope().lookupScope(paramTree.toString());
+                functionSymbol = functionScope.getSymbol(paramTree.toString());
+            } catch (SymbolNotFoundException e) {
+                raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                return "";
+            }
 
             if (functionSymbol.getDataType() != null) {
                 String ret = generator.createTemp(subTree.getCurrentScope());
@@ -438,7 +448,7 @@ public class SemanticChecker {
 
             if (rightTree.isFunctionCall()) {
 
-                TigerTree paramTree = (TigerTree) subTree.getChild(0);
+                TigerTree paramTree = (TigerTree) rightTree.getChild(0);
                 String[] params = new String[paramTree.getChildCount()];
 
                 for (int i = 0; i < paramTree.getChildCount(); i++) {
@@ -446,11 +456,13 @@ public class SemanticChecker {
                 }
                 if (leftTree.isArray()) {
                     String t2 = generator.createTemp(subTree.getCurrentScope());
-                    generator.emitCallWithReturn(IntermediateCode.CALLR, paramTree.toString(), t2, params);
+                    generator.emitCallWithReturn(IntermediateCode.CALLR,
+                            paramTree.toString(), t2, params);
                     generator.emit(IntermediateCode.ARRAY_STORE,
                             leftTree.getChild(0).toString(), t1, t2);
                 } else {
-                    generator.emitCallWithReturn(IntermediateCode.CALLR, paramTree.toString(), t1, params);
+                    generator.emitCallWithReturn(IntermediateCode.CALLR,
+                            paramTree.toString(), t1, params);
                 }
 
             } else {
@@ -465,14 +477,29 @@ public class SemanticChecker {
             }
             return "";
 
-        } else if (subTree.isVariableReference()) {
+        } else if (subTree.isLiteral()) {
+            return subTree.toString();
+
+        } else if (subTree.isID()) {
+            return subTree.toString();
+        }
+
+        else if (subTree.isVariableReference()) {
 
             TigerTree variableTree = (TigerTree) subTree.getChild(0);
 
             if (subTree.isArray()) {
 
-                Symbol symbol = subTree.getCurrentScope().lookup(variableTree.toString());
-                Scope typeScope = subTree.getCurrentScope().getDataTypeScope(symbol);
+                Symbol symbol;
+                Scope typeScope;
+                try {
+                    symbol = subTree.getCurrentScope().lookup(variableTree.toString());
+                    typeScope = subTree.getCurrentScope().lookupDefinedTypeScope(symbol.getDataType());
+                } catch (SymbolNotFoundException e) {
+                    raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                    return "";
+                }
+
                 Symbol typeSymbol = typeScope.getSymbol(symbol.getDataType());
 
                 String t1 = generator.createTemp(subTree.getCurrentScope());
@@ -523,8 +550,16 @@ public class SemanticChecker {
 
         if (subTree.isArray()) {
 
-            Symbol symbol = subTree.getCurrentScope().lookup(variableTree.toString());
-            Scope typeScope = subTree.getCurrentScope().getDataTypeScope(symbol);
+            Symbol symbol;
+            Scope typeScope;
+            try {
+                symbol = subTree.getCurrentScope().lookup(variableTree.toString());
+                typeScope = subTree.getCurrentScope().lookupDefinedTypeScope(symbol.getDataType());
+            } catch (SymbolNotFoundException e) {
+                raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                return "";
+            }
+
             Symbol typeSymbol = typeScope.getSymbol(symbol.getDataType());
 
             String t1 = generate((TigerTree) variableTree.getChild(0));
