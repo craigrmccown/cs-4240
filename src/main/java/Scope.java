@@ -73,11 +73,11 @@ public class Scope {
         }
     }
 
-    public Scope lookupDefinedTypeScope(Symbol symbol) throws SymbolNotFoundException {
-        if (symbol.getDataType().equals("int") || symbol.getDataType().equals("fixedpt") || symbol.getDataType().equals("VOID")) {
+    public Scope lookupDefinedTypeScope(String dataType) throws SymbolNotFoundException {
+        if (dataType.equals("int") || dataType.equals("fixedpt") || dataType.equals("VOID")) {
             return null;
         } else {
-            return lookupScope(symbol.getDataType());
+            return lookupScope(dataType);
         }
     }
 

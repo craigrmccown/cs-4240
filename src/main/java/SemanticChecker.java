@@ -35,7 +35,7 @@ public class SemanticChecker {
 
             try {
                 symbol = currentScope.lookup(variableTree.toString());
-                typeScope = currentScope.lookupDefinedTypeScope(symbol);
+                typeScope = currentScope.lookupDefinedTypeScope(symbol.getDataType());
             } catch (SymbolNotFoundException e) {
                 raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
                 return;
@@ -78,6 +78,8 @@ public class SemanticChecker {
                     symbolTable.handleSymbolDeclaration(currentScope, childTree);
                 } catch (DuplicateSymbolException e) {
                     raiseError("duplicate declaration detected for symbol '" + e.getSymbol() + "'", childTree.getLine());
+                } catch (SymbolNotFoundException e) {
+                    raiseError("undefined symbol named '" + e.getSymbolName() + "'", childTree.getLine());
                 }
             }
 
@@ -147,7 +149,7 @@ public class SemanticChecker {
             try {
                 declarationScope = currentScope.lookupScope(subTree.getChild(1).toString());
                 declarationSymbol = declarationScope.getSymbol(subTree.getChild(1).toString());
-                declarationTypeScope = declarationScope.lookupDefinedTypeScope(declarationSymbol);
+                declarationTypeScope = declarationScope.lookupDefinedTypeScope(declarationSymbol.getDataType());
             } catch (SymbolNotFoundException e) {
                 raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
                 return;
@@ -206,7 +208,7 @@ public class SemanticChecker {
                 functionCallTree = (TigerTree) subTree.getChild(0);
                 functionScope = currentScope.lookupScope(functionCallTree.toString());
                 functionSymbol = functionScope.getSymbol(functionCallTree.toString());
-                typeScope = functionScope.lookupDefinedTypeScope(functionSymbol);
+                typeScope = functionScope.lookupDefinedTypeScope(functionSymbol.getDataType());
             } catch (SymbolNotFoundException e) {
                 raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
                 return;
@@ -231,7 +233,7 @@ public class SemanticChecker {
                 dataType = resolveLeftDataTypeNames(functionSymbol.getParameter(i).getDataType(), parameterTree.getDataType());
 
                 try {
-                    parameterTypeScope = functionScope.lookupDefinedTypeScope(functionSymbol.getParameter(i));
+                    parameterTypeScope = functionScope.lookupDefinedTypeScope(functionSymbol.getParameter(i).getDataType());
                 } catch (SymbolNotFoundException e) {
                     raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
                     return;

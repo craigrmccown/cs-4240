@@ -37,7 +37,7 @@ public class SymbolTable {
         return child;
     }
 
-    public void handleSymbolDeclaration(Scope scope, TigerTree tree) throws DuplicateSymbolException {
+    public void handleSymbolDeclaration(Scope scope, TigerTree tree) throws DuplicateSymbolException, SymbolNotFoundException {
         if (tree.getType() == TigerLexer.TYPE) {
             addType(scope, tree);
         } else if (tree.getType() == TigerLexer.VAR) {
@@ -79,8 +79,12 @@ public class SymbolTable {
         }
     }
 
-    private void addVar(Scope scope, TigerTree varTree) throws DuplicateSymbolException {
-        int lastVar = varTree.getChildren().size();
+    private void addVar(Scope scope, TigerTree varTree) throws DuplicateSymbolException, SymbolNotFoundException {
+        int lastVar;
+
+        scope.lookupDefinedTypeScope(varTree.getChild(0).toString());
+
+        lastVar = varTree.getChildren().size();
 
         if ((varTree.getChild(lastVar - 1)).getType() == TigerLexer.OPTIONAL_INIT) {
             lastVar --;
