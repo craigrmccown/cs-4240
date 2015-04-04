@@ -13,6 +13,7 @@ public class SemanticChecker {
 
     public void check(TigerTree parseTree) {
         firstPass(parseTree, symbolTable.getRootScope());
+        secondPass(parseTree);
     }
 
     private void firstPass(TigerTree subTree, Scope currentScope) {
@@ -239,6 +240,258 @@ public class SemanticChecker {
                 parentTree.setReturnType(subTree.getReturnType(), subTree.getReturnTypeScope());
             }
         }
+    }
+
+    private void secondPass(TigerTree subTree) {
+        generate((TigerTree) subTree);
+    }
+
+    private String generate(TigerTree subTree) {
+        int opcode = -1;
+        if (subTree.isArithmeticOperator()) {
+            switch (subTree.getType()) {
+                case TigerLexer.PLUS:
+                    opcode = IntermediateCode.ADD;
+                    break;
+                case TigerLexer.MINUS:
+                    opcode = IntermediateCode.SUB;
+                    break;
+                case TigerLexer.MULTIPLY:
+                    opcode = IntermediateCode.MULT;
+                    break;
+                case TigerLexer.DIVIDE:
+                    opcode = IntermediateCode.DIV;
+                    break;
+                default:
+                    System.out.println("Something is seriously broken");
+            }
+            String t1 = generate((TigerTree) subTree.getChild(0));
+            String t2 = generate((TigerTree) subTree.getChild(1));
+            String ret = generator.createTemp(subTree.getCurrentScope());
+            generator.emit(opcode, t1, t2, ret);
+            return ret;
+
+        } else if (subTree.isAndOperator()) {
+
+            TigerTree firstChild = (TigerTree) subTree.getChild(0);
+            String ret = generator.createTemp(subTree.getCurrentScope());
+            String t1 = generate(firstChild);
+
+            //short circuit if child is an expression
+            if (firstChild.isConditionalOperator() || firstChild.isArithmeticOperator()) {
+                //there's no goto_if in our IR opcode list
+                //so I got around that by using break-equal to zero
+
+                String label1 = generator.createLabel();
+                generator.emit(IntermediateCode.ASSIGN, ret, t1, "");
+                generator.emit(IntermediateCode.BREQ, t1, "0", label1);
+                String t2 = generate((TigerTree) subTree.getChild(1));
+                generator.emit(IntermediateCode.ASSIGN, ret, t2, "");
+                generator.emitLabel(label1);
+            } else {
+                String t2 = generate((TigerTree) subTree.getChild(1));
+                generator.emit(IntermediateCode.AND, t1, t2, ret);
+            }
+            return ret;
+
+        } else if (subTree.isOrOperator()) {
+
+            TigerTree firstChild = (TigerTree) subTree.getChild(0);
+            String ret = generator.createTemp(subTree.getCurrentScope());
+            String t1 = generate(firstChild);
+
+            //short circuit if child is an expression
+            if (firstChild.isConditionalOperator() || firstChild.isArithmeticOperator()) {
+
+                String label1 = generator.createLabel();
+                generator.emit(IntermediateCode.ASSIGN, ret, t1, "");
+                generator.emit(IntermediateCode.BRNEQ, t1, "0", label1);
+                String t2 = generate((TigerTree) subTree.getChild(1));
+                generator.emit(IntermediateCode.ASSIGN, ret, t2, "");
+                generator.emitLabel(label1);
+            } else {
+                String t2 = generate((TigerTree) subTree.getChild(1));
+                generator.emit(IntermediateCode.OR, t1, t2, ret);
+            }
+            return ret;
+
+        } else if (subTree.isIfStatement()) {
+            String label1 = generator.createLabel();
+            String t1 = generate((TigerTree) subTree.getChild(0));
+            generator.emit(IntermediateCode.BRNEQ, t1, "0", label1);
+            generate((TigerTree) subTree.getChild(1));
+            generator.emitLabel(label1);
+            return "";
+
+        } else if (subTree.isWhileLoop()) {
+            String label1 = generator.createLabel();
+            String label2 = generator.createLabel();
+            generator.emitLabel(label1);
+            String t1 = generate((TigerTree) subTree.getChild(0));
+            generator.emit(IntermediateCode.BREQ, t1, "0", label2);
+            generate((TigerTree) subTree.getChild(1));
+            generator.emit(IntermediateCode.GOTO, label1, "", "");
+            generator.emitLabel(label2);
+            return "";
+
+        } else if (subTree.isForLoop()) {
+
+            //this takes the form:
+            //  for t2 := t1 to t3 do <body>
+
+            String label1 = generator.createLabel();
+            String label2 = generator.createLabel();
+            //Yup, this is ugly. This is the initial value of the loop
+            String t1 = generate((TigerTree) subTree.getChild(0).getChild(0).getChild(0));
+            //this is the index variable
+            String t2 = generate((TigerTree) subTree.getChild(0).getChild(1));
+            generator.emit(IntermediateCode.ASSIGN, t2, t1, "");
+            generator.emitLabel(label1);
+            //this is the end condition value
+            String t3 = generate((TigerTree) subTree.getChild(0).getChild(0).getChild(1));
+            generator.emit(IntermediateCode.BRGT, t2, t3, label2);
+            //generate body of loop
+            generate((TigerTree) subTree.getChild(1));
+            generator.emit(IntermediateCode.ADD, t2, "1", t2);
+            generator.emit(IntermediateCode.GOTO, label1, "","");
+            generator.emitLabel(label2);
+            return "";
+
+        } else if (subTree.isFunctionCall()) {
+            // the only time this should be called is when
+            // this is a statement by itself, it's not being
+            // assigned to anything, the assignment operator
+            // tree should handle this differently
+            TigerTree paramTree = (TigerTree) subTree.getChild(0);
+            String[] params = new String[paramTree.getChildCount()];
+
+            for (int i = 0; i < subTree.getChildCount(); i++) {
+                params[i] = generate((TigerTree) paramTree.getChild(i));
+            }
+
+            Scope functionScope = subTree.getCurrentScope().lookupScope(paramTree.toString());
+            Symbol functionSymbol = functionScope.getSymbol(paramTree.toString());
+            Scope typeScope = functionScope.getDataTypeScope(functionSymbol);
+
+            if (functionSymbol.getDataType() != null) {
+                String ret = generator.createTemp(subTree.getCurrentScope());
+                generator.emitCallWithReturn(IntermediateCode.CALLR, paramTree.toString(), ret, params);
+            } else {
+                generator.emitCall(IntermediateCode.CALL, paramTree.toString(), params);
+            }
+            return "";
+
+        } else if (subTree.isAssignmentOperator()) {
+
+            TigerTree rightTree = (TigerTree) subTree.getChild(1);
+            TigerTree leftTree = (TigerTree) subTree.getChild(0);
+
+            String t1 = leftGenerate((TigerTree) subTree.getChild(0));
+
+            if (rightTree.isFunctionCall()) {
+
+                TigerTree paramTree = (TigerTree) subTree.getChild(0);
+                String[] params = new String[paramTree.getChildCount()];
+
+                for (int i = 0; i < paramTree.getChildCount(); i++) {
+                    params[i] = generate((TigerTree) paramTree.getChild(i));
+                }
+                if (leftTree.isArray()) {
+                    String t2 = generator.createTemp(subTree.getCurrentScope());
+                    generator.emitCallWithReturn(IntermediateCode.CALLR, paramTree.toString(), t2, params);
+                    generator.emit(IntermediateCode.ARRAY_STORE,
+                            leftTree.getChild(0).toString(), t1, t2);
+                } else {
+                    generator.emitCallWithReturn(IntermediateCode.CALLR, paramTree.toString(), t1, params);
+                }
+
+            } else {
+
+                String t2 = generate(rightTree);
+                if (leftTree.isArray()) {
+                    generator.emit(IntermediateCode.ARRAY_STORE,
+                            leftTree.getChild(0).toString(), t1, t2);
+                } else {
+                    generator.emit(IntermediateCode.ASSIGN, t1, t2, "");
+                }
+            }
+            return "";
+
+        } else if (subTree.isVariableReference()) {
+
+            TigerTree variableTree = (TigerTree) subTree.getChild(0);
+
+            if (subTree.isArray()) {
+
+                Symbol symbol = subTree.getCurrentScope().lookup(variableTree.toString());
+                Scope typeScope = subTree.getCurrentScope().getDataTypeScope(symbol);
+                Symbol typeSymbol = typeScope.getSymbol(symbol.getDataType());
+
+                String t1 = generator.createTemp(subTree.getCurrentScope());
+                String t2 = generate((TigerTree) variableTree.getChild(0));
+
+                if (typeSymbol.getSymbolType() == Symbol.ARRAYTYPE) {
+                    generator.emit(IntermediateCode.ARRAY_LOAD, t1,
+                            variableTree.getChild(0).toString(), t2);
+                } else {
+                    //array flattening
+                    String t3 = generate((TigerTree) variableTree.getChild(1));
+                    String t4 = generator.createTemp(subTree.getCurrentScope());
+                    generator.emit(IntermediateCode.MULT, t2, "" + typeSymbol.getSize2d(), t4);
+                    generator.emit(IntermediateCode.ADD, t4, t3, t1);
+
+                } return t1;
+            } else return variableTree.toString();
+
+        } else if (subTree.isVariableDeclaration()) {
+            int numVars = subTree.getChildCount() - 1;
+            if (((TigerTree) subTree.getChild(numVars)).isOptionalInit()) {
+                String t1 = ((TigerTree) subTree.getChild(numVars).getChild(0)).toString();
+                numVars--;
+                for (int i = 0; i < numVars; i++) {
+                    generator.emit(IntermediateCode.ASSIGN,
+                            subTree.getChild(i + 1).toString(), t1, "");
+                }
+            }
+            return "";
+        } else if (subTree.isFunctionDeclaration()) {
+
+        } else if (subTree.isTypeDeclaration()) {
+
+        }
+
+        else if (subTree.getChildCount() > 0) {
+            System.out.println(subTree.toString());
+            for (int i = 0; i < subTree.getChildCount(); i++) {
+                generate((TigerTree) subTree.getChild(i));
+            }
+        }
+        return "";
+    }
+
+    private String leftGenerate(TigerTree subTree) {
+
+        TigerTree variableTree = (TigerTree) subTree.getChild(0);
+
+        if (subTree.isArray()) {
+
+            Symbol symbol = subTree.getCurrentScope().lookup(variableTree.toString());
+            Scope typeScope = subTree.getCurrentScope().getDataTypeScope(symbol);
+            Symbol typeSymbol = typeScope.getSymbol(symbol.getDataType());
+
+            String t1 = generate((TigerTree) variableTree.getChild(0));
+
+            if (typeSymbol.getSymbolType() == Symbol.ARRAYTYPE) {
+                return generate((TigerTree) variableTree.getChild(0));
+            } else {
+                //array flattening
+                String t2 = generate((TigerTree) variableTree.getChild(1));
+                String t3 = generator.createTemp(subTree.getCurrentScope());
+                generator.emit(IntermediateCode.MULT, t1, "" + typeSymbol.getSize2d(), t3);
+                generator.emit(IntermediateCode.ADD, t3, t2, t3);
+                return t3;
+            }
+        } else return variableTree.toString();
     }
 
     private String resolveTypeEquivalence(TigerTree left, TigerTree right) {

@@ -19,16 +19,28 @@ public class IRGenerator {
         operations.addLast(new FourAddressCode(opcode, param1, param2, param3));
     }
 
-    public void emitFunctionCall(int opcode, String... params) {
-        operations.addLast(new MultiAddressCode(opcode, params));
+    public void emitLabel(String label) {
+        operations.addLast(new LabelCode(label));
+    }
+
+    public void emitCall(int opcode, String name, String[] params) {
+        operations.addLast(new MultiAddressCode(opcode, name, params));
+    }
+
+    public void emitCallWithReturn(int opcode, String name, String retAddress, String[] params) {
+        operations.addLast(new MultiAddressCode(opcode, name, retAddress, params));
     }
 
     public String createLabel() {
-        return "label_" + labelCount;
+        String ret = "label_" + labelCount;
+        labelCount++;
+        return ret;
     }
 
     public String createTemp(Scope scope) {
-        while (scope.lookup("t" + tempCount) != null) tempCount++;
-        return "t" + tempCount;
+        while (scope.exists("t" + tempCount)) tempCount++;
+        String ret = "t" + tempCount;
+        tempCount++;
+        return ret;
     }
 }

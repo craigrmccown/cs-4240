@@ -46,6 +46,12 @@ public class Scope {
         return symbol;
     }
 
+    public boolean exists(String key) {
+        if (getSymbol(key) != null) return true;
+        else if (parent != null) return parent.exists(key);
+        return false;
+    }
+
     public Symbol lookup(String key) {
         Scope x = lookupScope(key);
         return x.getSymbol(key);
