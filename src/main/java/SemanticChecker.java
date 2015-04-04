@@ -32,8 +32,14 @@ public class SemanticChecker {
             Scope typeScope;
 
             variableTree = (TigerTree) subTree.getChild(0);
-            symbol = currentScope.lookup(variableTree.toString());
-            typeScope = currentScope.getDataTypeScope(symbol);
+
+            try {
+                symbol = currentScope.lookup(variableTree.toString());
+                typeScope = currentScope.lookupDefinedTypeScope(symbol);
+            } catch (SymbolNotFoundException e) {
+                raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                return;
+            }
 
             if (typeScope == null) {
                 typeSymbol = symbol;
@@ -68,7 +74,11 @@ public class SemanticChecker {
             if (childTree.isBlock()) {
                 nextScope = symbolTable.addChildScope(currentScope, childTree.getFunctionKey());
             } else if (childTree.isSymbolDeclaration()) {
-                symbolTable.addSymbol(currentScope, childTree);
+                try {
+                    symbolTable.handleSymbolDeclaration(currentScope, childTree);
+                } catch (DuplicateSymbolException e) {
+                    raiseError("duplicate declaration detected for symbol '" + e.getSymbol() + "'", childTree.getLine());
+                }
             }
 
             firstPass(childTree, nextScope);
@@ -134,9 +144,14 @@ public class SemanticChecker {
             Scope declarationScope, declarationTypeScope;
             Symbol declarationSymbol;
 
-            declarationScope = currentScope.lookupScope(subTree.getChild(1).toString());
-            declarationSymbol = declarationScope.getSymbol(subTree.getChild(1).toString());
-            declarationTypeScope = declarationScope.getDataTypeScope(declarationSymbol);
+            try {
+                declarationScope = currentScope.lookupScope(subTree.getChild(1).toString());
+                declarationSymbol = declarationScope.getSymbol(subTree.getChild(1).toString());
+                declarationTypeScope = declarationScope.lookupDefinedTypeScope(declarationSymbol);
+            } catch (SymbolNotFoundException e) {
+                raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                return;
+            }
 
             if (declarationSymbol.getDataType().equals("VOID")) {
                 if (subTree.getReturnType() != null) {
@@ -158,6 +173,7 @@ public class SemanticChecker {
 
             TigerTree constantTree, typeTree;
             String dataType;
+            Symbol typeSymbol;
 
             constantTree = (TigerTree) subTree.getChild(0);
             typeTree = (TigerTree) subTree.parent.getChild(0);
@@ -165,7 +181,12 @@ public class SemanticChecker {
             dataType = resolveLeftDataTypeNames(typeTree.toString(), constantTree.getDataType());
 
             if (dataType == null) {
-                Symbol typeSymbol = currentScope.lookup(typeTree.toString());
+                try {
+                    typeSymbol = currentScope.lookup(typeTree.toString());
+                } catch (SymbolNotFoundException e) {
+                    raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                    return;
+                }
 
                 if (typeSymbol == null || resolveLeftDataTypeNames(typeSymbol.getDataType(), constantTree.getDataType()) == null) {
                     raiseError("cannot assign value of type '" + constantTree.getDataType() + "' to variable of type '" + typeTree.toString() + "'", subTree.getLine());
@@ -181,10 +202,16 @@ public class SemanticChecker {
             Symbol functionSymbol;
             int numArgs;
 
-            functionCallTree = (TigerTree) subTree.getChild(0);
-            functionScope = currentScope.lookupScope(functionCallTree.toString());
-            functionSymbol = functionScope.getSymbol(functionCallTree.toString());
-            typeScope = functionScope.getDataTypeScope(functionSymbol);
+            try {
+                functionCallTree = (TigerTree) subTree.getChild(0);
+                functionScope = currentScope.lookupScope(functionCallTree.toString());
+                functionSymbol = functionScope.getSymbol(functionCallTree.toString());
+                typeScope = functionScope.lookupDefinedTypeScope(functionSymbol);
+            } catch (SymbolNotFoundException e) {
+                raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                return;
+            }
+
             numArgs = 0;
 
             if (functionCallTree.getChildren() != null) {
@@ -195,10 +222,20 @@ public class SemanticChecker {
                 raiseError("wrong number of arguments passed to function '" + functionSymbol.getName() + "'", subTree.getLine());
             }
 
+            TigerTree parameterTree;
+            String dataType;
+            Scope parameterTypeScope;
+
             for (int i = 0; i < functionSymbol.getNumParameters(); i++) {
-                TigerTree parameterTree = (TigerTree) functionCallTree.getChild(i);
-                String dataType = resolveLeftDataTypeNames(functionSymbol.getParameter(i).getDataType(), parameterTree.getDataType());
-                Scope parameterTypeScope = functionScope.getDataTypeScope(functionSymbol.getParameter(i));
+                parameterTree = (TigerTree) functionCallTree.getChild(i);
+                dataType = resolveLeftDataTypeNames(functionSymbol.getParameter(i).getDataType(), parameterTree.getDataType());
+
+                try {
+                    parameterTypeScope = functionScope.lookupDefinedTypeScope(functionSymbol.getParameter(i));
+                } catch (SymbolNotFoundException e) {
+                    raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                    return;
+                }
 
                 if (dataType == null || parameterTypeScope != parameterTree.getDataTypeScope()) {
                     raiseError("argument types do not match parameter types in function definition", subTree.getLine());

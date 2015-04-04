@@ -22,7 +22,13 @@ public class Scope {
 
     public void addChildScope(Scope child) { this.children.add(child); }
 
-    public boolean addSymbol(String key, Symbol value) {
+    public void addSymbol(String key, Symbol value) throws DuplicateSymbolException {
+        if (!addSymbolUnsafe(key, value)) {
+            throw new DuplicateSymbolException(value);
+        }
+    }
+
+    public boolean addSymbolUnsafe(String key, Symbol value) {
         Symbol old = symbols.get(key);
 
         if (old == null) {
@@ -47,7 +53,7 @@ public class Scope {
         return symbol;
     }
 
-    public Symbol lookup(String key) {
+    public Symbol lookup(String key) throws SymbolNotFoundException {
         Scope x = lookupScope(key);
 
         if (x == null) {
@@ -57,7 +63,25 @@ public class Scope {
         }
     }
 
-    public Scope lookupScope(String key) {
+    public Scope lookupScope(String key) throws SymbolNotFoundException {
+        Scope scope = lookupScopeUnsafe(key);
+
+        if (scope != null) {
+            return scope;
+        } else {
+            throw new SymbolNotFoundException(key);
+        }
+    }
+
+    public Scope lookupDefinedTypeScope(Symbol symbol) throws SymbolNotFoundException {
+        if (symbol.getDataType().equals("int") || symbol.getDataType().equals("fixedpt") || symbol.getDataType().equals("VOID")) {
+            return null;
+        } else {
+            return lookupScope(symbol.getDataType());
+        }
+    }
+
+    public Scope lookupScopeUnsafe(String key) {
         Symbol found = getSymbol(key);
 
         if (found != null) {
@@ -66,16 +90,8 @@ public class Scope {
             if (parent == null) {
                 return null;
             } else {
-                return parent.lookupScope(key);
+                return parent.lookupScopeUnsafe(key);
             }
-        }
-    }
-
-    public Scope getDataTypeScope(Symbol symbol) {
-        if (symbol.getDataType().equals("int") || symbol.getDataType().equals("fixedpt") || symbol.getDataType().equals("VOID")) {
-            return null;
-        } else {
-            return lookupScope(symbol.getDataType());
         }
     }
 

@@ -18,14 +18,13 @@ public class SymbolTable {
         notParams.add(new Symbol("i", "int"));
         exitParams.add(new Symbol("i", "int"));
 
-        rootScope.addSymbol("printi", new Symbol("printi", "VOID", printiParams));
-        rootScope.addSymbol("printf", new Symbol("printf", "VOID", printfParams));
-        rootScope.addSymbol("readi", new Symbol("readi", "int", new ArrayList<Symbol>()));
-        rootScope.addSymbol("readf", new Symbol("readf", "fixedpt", new ArrayList<Symbol>()));
-        rootScope.addSymbol("flush", new Symbol("flush", "VOID", new ArrayList<Symbol>()));
-        rootScope.addSymbol("not", new Symbol("not", "int", notParams));
-        rootScope.addSymbol("exit", new Symbol("exit", "VOID", exitParams));
-
+        rootScope.addSymbolUnsafe("printi", new Symbol("printi", "VOID", printiParams));
+        rootScope.addSymbolUnsafe("printf", new Symbol("printf", "VOID", printfParams));
+        rootScope.addSymbolUnsafe("readi", new Symbol("readi", "int", new ArrayList<Symbol>()));
+        rootScope.addSymbolUnsafe("readf", new Symbol("readf", "fixedpt", new ArrayList<Symbol>()));
+        rootScope.addSymbolUnsafe("flush", new Symbol("flush", "VOID", new ArrayList<Symbol>()));
+        rootScope.addSymbolUnsafe("not", new Symbol("not", "int", notParams));
+        rootScope.addSymbolUnsafe("exit", new Symbol("exit", "VOID", exitParams));
     }
 
     public Scope getRootScope() {
@@ -38,7 +37,7 @@ public class SymbolTable {
         return child;
     }
 
-    public void addSymbol(Scope scope, TigerTree tree) {
+    public void handleSymbolDeclaration(Scope scope, TigerTree tree) throws DuplicateSymbolException {
         if (tree.getType() == TigerLexer.TYPE) {
             addType(scope, tree);
         } else if (tree.getType() == TigerLexer.VAR) {
@@ -48,7 +47,7 @@ public class SymbolTable {
         }
     }
 
-    private void addType(Scope scope, TigerTree typeTree) {
+    private void addType(Scope scope, TigerTree typeTree) throws DuplicateSymbolException {
         if (typeTree.getChild(0).getType() == TigerLexer.ARRAY) {
             BaseTree arrayTree = (BaseTree) typeTree.getChild(0);
 
@@ -80,7 +79,7 @@ public class SymbolTable {
         }
     }
 
-    private void addVar(Scope scope, TigerTree varTree) {
+    private void addVar(Scope scope, TigerTree varTree) throws DuplicateSymbolException {
         int lastVar = varTree.getChildren().size();
 
         if ((varTree.getChild(lastVar - 1)).getType() == TigerLexer.OPTIONAL_INIT) {
@@ -89,13 +88,13 @@ public class SymbolTable {
 
         for (int i = 1; i < lastVar; i ++) {
             scope.addSymbol(
-                    varTree.getChild(i).toString(),
-                    new Symbol(varTree.getChild(i).toString(), varTree.getChild(0).toString())
+                varTree.getChild(i).toString(),
+                new Symbol(varTree.getChild(i).toString(), varTree.getChild(0).toString())
             );
         }
     }
 
-    private void addFunction(Scope scope, TigerTree functionTree) {
+    private void addFunction(Scope scope, TigerTree functionTree) throws DuplicateSymbolException {
         ArrayList<Symbol> params = new ArrayList<Symbol>();
         BaseTree paramsTree = (BaseTree) functionTree.getChild(2);
         BaseTree paramTree;
@@ -108,8 +107,8 @@ public class SymbolTable {
         }
 
         scope.addSymbol(
-                functionTree.getChild(1).toString(),
-                new Symbol(functionTree.getChild(1).toString(), functionTree.getChild(0).toString(), params)
+            functionTree.getChild(1).toString(),
+            new Symbol(functionTree.getChild(1).toString(), functionTree.getChild(0).toString(), params)
         );
     }
 
