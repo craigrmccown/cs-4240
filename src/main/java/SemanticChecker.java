@@ -151,7 +151,10 @@ public class SemanticChecker {
             }
         } else if (subTree.isOptionalInit()) {
             // check that the data type of the var declaration matches
-            // the type of the initialization constant.
+            // the type of the initialization constant. only data type
+            // names, not scopes need to be checked for type equality
+            // because the initializer must be a constant of type fixedpt
+            // or int.
 
             TigerTree constantTree, typeTree;
             String dataType;
@@ -159,10 +162,14 @@ public class SemanticChecker {
             constantTree = (TigerTree) subTree.getChild(0);
             typeTree = (TigerTree) subTree.parent.getChild(0);
 
-            dataType = resolveDataTypes(constantTree.getDataType(), typeTree.toString());
+            dataType = resolveLeftDataTypeNames(typeTree.toString(), constantTree.getDataType());
 
-            if (dataType == null || !dataType.equals(typeTree.toString())) {
-                raiseError("cannot assign value of type '" + constantTree.getDataType() + "' to variable of type '" + typeTree.toString() + "'", subTree.getLine());
+            if (dataType == null) {
+                Symbol typeSymbol = currentScope.lookup(typeTree.toString());
+
+                if (typeSymbol == null || resolveLeftDataTypeNames(typeSymbol.getDataType(), constantTree.getDataType()) == null) {
+                    raiseError("cannot assign value of type '" + constantTree.getDataType() + "' to variable of type '" + typeTree.toString() + "'", subTree.getLine());
+                }
             }
         } else if (subTree.isFunctionCall()) {
             // check that the number and type of parameters match those
@@ -189,9 +196,11 @@ public class SemanticChecker {
             }
 
             for (int i = 0; i < functionSymbol.getNumParameters(); i++) {
-                String dataType = resolveDataTypes(functionSymbol.getParameter(i).getDataType(), ((TigerTree) functionCallTree.getChild(i)).getDataType());
+                TigerTree parameterTree = (TigerTree) functionCallTree.getChild(i);
+                String dataType = resolveLeftDataTypeNames(functionSymbol.getParameter(i).getDataType(), parameterTree.getDataType());
+                Scope parameterTypeScope = functionScope.getDataTypeScope(functionSymbol.getParameter(i));
 
-                if (dataType == null || !dataType.equals(functionSymbol.getParameter(i).getDataType())) {
+                if (dataType == null || parameterTypeScope != parameterTree.getDataTypeScope()) {
                     raiseError("argument types do not match parameter types in function definition", subTree.getLine());
                 }
             }
@@ -240,9 +249,9 @@ public class SemanticChecker {
     }
 
     private String resolveTypeEquivalence(TigerTree left, TigerTree right) {
-        String dataType = resolveDataTypes(left.getDataType(), right.getDataType());
+        String dataType = resolveDataTypeNames(left.getDataType(), right.getDataType());
 
-        if (dataType != null && left.getDataTypeScope() == right.getDataTypeScope()) {
+        if (left.getDataTypeScope() == right.getDataTypeScope()) {
             return dataType;
         } else {
             return null;
@@ -250,9 +259,9 @@ public class SemanticChecker {
     }
 
     private String resolveLeftTypeEquivalence(TigerTree left, TigerTree right) {
-        String dataType = resolveDataTypes(left.getDataType(), right.getDataType());
+        String dataType = resolveLeftDataTypeNames(left.getDataType(), right.getDataType());
 
-        if (dataType != null && dataType.equals(left.getDataType()) && left.getDataTypeScope() == right.getDataTypeScope()) {
+        if (left.getDataTypeScope() == right.getDataTypeScope()) {
             return dataType;
         } else {
             return null;
@@ -260,28 +269,38 @@ public class SemanticChecker {
     }
 
     private String resolveReturnTypeEquivalence(TigerTree left, TigerTree right) {
-        String returnType = resolveDataTypes(left.getReturnType(), right.getReturnType());
+        String returnType = resolveDataTypeNames(left.getReturnType(), right.getReturnType());
 
-        if (returnType != null && left.getReturnTypeScope() == right.getReturnTypeScope()) {
+        if (left.getReturnTypeScope() == right.getReturnTypeScope()) {
             return returnType;
         } else {
             return null;
         }
     }
 
-    private String resolveDataTypes(String dataType1, String dataType2) {
+    private String resolveDataTypeNames(String left, String right) {
         // resolves two data types. if mixed 'int' and 'fixedpt',
         // return fixedpt. if the two types are equal, return that
         // type. otherwise, return null.
 
         if (
-            dataType1.equals("fixedpt") && dataType2.equals("fixedpt") ||
-            dataType1.equals("int") && dataType2.equals("fixedpt") ||
-            dataType1.equals("fixedpt") && dataType2.equals("int")
+            left.equals("fixedpt") && right.equals("fixedpt") ||
+            left.equals("int") && right.equals("fixedpt") ||
+            left.equals("fixedpt") && right.equals("int")
         ) {
             return "fixedpt";
-        } else if (dataType1.equals(dataType2)) {
-            return dataType1;
+        } else if (left.equals(right)) {
+            return left;
+        } else {
+            return null;
+        }
+    }
+
+    private String resolveLeftDataTypeNames(String left, String right) {
+        String dataType = resolveDataTypeNames(left, right);
+
+        if (dataType != null && dataType.equals(left)) {
+            return dataType;
         } else {
             return null;
         }

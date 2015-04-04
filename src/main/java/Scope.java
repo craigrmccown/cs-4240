@@ -22,13 +22,14 @@ public class Scope {
 
     public void addChildScope(Scope child) { this.children.add(child); }
 
-    public void addSymbol(String key, Symbol value) {
+    public boolean addSymbol(String key, Symbol value) {
         Symbol old = symbols.get(key);
 
         if (old == null) {
             symbols.put(key, value);
+            return true;
         } else {
-            throw new RuntimeException("symbol defined twice: " + key);
+            return false;
         }
     }
 
@@ -48,7 +49,12 @@ public class Scope {
 
     public Symbol lookup(String key) {
         Scope x = lookupScope(key);
-        return x.getSymbol(key);
+
+        if (x == null) {
+            return null;
+        } else {
+            return x.getSymbol(key);
+        }
     }
 
     public Scope lookupScope(String key) {
@@ -58,7 +64,7 @@ public class Scope {
             return this;
         } else {
             if (parent == null) {
-                throw new RuntimeException("undefined symbol");
+                return null;
             } else {
                 return parent.lookupScope(key);
             }
