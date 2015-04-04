@@ -22,13 +22,20 @@ public class Scope {
 
     public void addChildScope(Scope child) { this.children.add(child); }
 
-    public void addSymbol(String key, Symbol value) {
+    public void addSymbol(String key, Symbol value) throws DuplicateSymbolException {
+        if (!addSymbolUnsafe(key, value)) {
+            throw new DuplicateSymbolException(value);
+        }
+    }
+
+    public boolean addSymbolUnsafe(String key, Symbol value) {
         Symbol old = symbols.get(key);
 
         if (old == null) {
             symbols.put(key, value);
+            return true;
         } else {
-            throw new RuntimeException("symbol defined twice: " + key);
+            return false;
         }
     }
 
@@ -46,36 +53,46 @@ public class Scope {
         return symbol;
     }
 
-    public boolean exists(String key) {
-        if (getSymbol(key) != null) return true;
-        else if (parent != null) return parent.exists(key);
-        return false;
-    }
+    public Symbol lookup(String key) throws SymbolNotFoundException {
 
-    public Symbol lookup(String key) {
         Scope x = lookupScope(key);
-        return x.getSymbol(key);
+
+        if (x == null) {
+            return null;
+        } else {
+            return x.getSymbol(key);
+        }
     }
 
-    public Scope lookupScope(String key) {
+    public Scope lookupScope(String key) throws SymbolNotFoundException {
+        Scope scope = lookupScopeUnsafe(key);
+
+        if (scope != null) {
+            return scope;
+        } else {
+            throw new SymbolNotFoundException(key);
+        }
+    }
+
+    public Scope lookupDefinedTypeScope(String dataType) throws SymbolNotFoundException {
+        if (dataType.equals("int") || dataType.equals("fixedpt") || dataType.equals("VOID")) {
+            return null;
+        } else {
+            return lookupScope(dataType);
+        }
+    }
+
+    public Scope lookupScopeUnsafe(String key) {
         Symbol found = getSymbol(key);
 
         if (found != null) {
             return this;
         } else {
             if (parent == null) {
-                throw new RuntimeException("undefined symbol");
+                return null;
             } else {
-                return parent.lookupScope(key);
+                return parent.lookupScopeUnsafe(key);
             }
-        }
-    }
-
-    public Scope getDataTypeScope(Symbol symbol) {
-        if (symbol.getDataType().equals("int") || symbol.getDataType().equals("fixedpt") || symbol.getDataType().equals("VOID")) {
-            return null;
-        } else {
-            return lookupScope(symbol.getDataType());
         }
     }
 

@@ -35,8 +35,14 @@ public class SemanticChecker {
             Scope typeScope;
 
             variableTree = (TigerTree) subTree.getChild(0);
-            symbol = currentScope.lookup(variableTree.toString());
-            typeScope = currentScope.getDataTypeScope(symbol);
+
+            try {
+                symbol = currentScope.lookup(variableTree.toString());
+                typeScope = currentScope.lookupDefinedTypeScope(symbol.getDataType());
+            } catch (SymbolNotFoundException e) {
+                raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                return;
+            }
 
             if (typeScope == null) {
                 typeSymbol = symbol;
@@ -71,7 +77,13 @@ public class SemanticChecker {
             if (childTree.isBlock()) {
                 nextScope = symbolTable.addChildScope(currentScope, childTree.getFunctionKey());
             } else if (childTree.isSymbolDeclaration()) {
-                symbolTable.addSymbol(currentScope, childTree);
+                try {
+                    symbolTable.handleSymbolDeclaration(currentScope, childTree);
+                } catch (DuplicateSymbolException e) {
+                    raiseError("duplicate declaration detected for symbol '" + e.getSymbol() + "'", childTree.getLine());
+                } catch (SymbolNotFoundException e) {
+                    raiseError("undefined symbol named '" + e.getSymbolName() + "'", childTree.getLine());
+                }
             }
 
             firstPass(childTree, nextScope);
@@ -137,9 +149,14 @@ public class SemanticChecker {
             Scope declarationScope, declarationTypeScope;
             Symbol declarationSymbol;
 
-            declarationScope = currentScope.lookupScope(subTree.getChild(1).toString());
-            declarationSymbol = declarationScope.getSymbol(subTree.getChild(1).toString());
-            declarationTypeScope = declarationScope.getDataTypeScope(declarationSymbol);
+            try {
+                declarationScope = currentScope.lookupScope(subTree.getChild(1).toString());
+                declarationSymbol = declarationScope.getSymbol(subTree.getChild(1).toString());
+                declarationTypeScope = declarationScope.lookupDefinedTypeScope(declarationSymbol.getDataType());
+            } catch (SymbolNotFoundException e) {
+                raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                return;
+            }
 
             if (declarationSymbol.getDataType().equals("VOID")) {
                 if (subTree.getReturnType() != null) {
@@ -154,18 +171,31 @@ public class SemanticChecker {
             }
         } else if (subTree.isOptionalInit()) {
             // check that the data type of the var declaration matches
-            // the type of the initialization constant.
+            // the type of the initialization constant. only data type
+            // names, not scopes need to be checked for type equality
+            // because the initializer must be a constant of type fixedpt
+            // or int.
 
             TigerTree constantTree, typeTree;
             String dataType;
+            Symbol typeSymbol;
 
             constantTree = (TigerTree) subTree.getChild(0);
             typeTree = (TigerTree) subTree.parent.getChild(0);
 
-            dataType = resolveDataTypes(constantTree.getDataType(), typeTree.toString());
+            dataType = resolveLeftDataTypeNames(typeTree.toString(), constantTree.getDataType());
 
-            if (dataType == null || !dataType.equals(typeTree.toString())) {
-                raiseError("cannot assign value of type '" + constantTree.getDataType() + "' to variable of type '" + typeTree.toString() + "'", subTree.getLine());
+            if (dataType == null) {
+                try {
+                    typeSymbol = currentScope.lookup(typeTree.toString());
+                } catch (SymbolNotFoundException e) {
+                    raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                    return;
+                }
+
+                if (typeSymbol == null || resolveLeftDataTypeNames(typeSymbol.getDataType(), constantTree.getDataType()) == null) {
+                    raiseError("cannot assign value of type '" + constantTree.getDataType() + "' to variable of type '" + typeTree.toString() + "'", subTree.getLine());
+                }
             }
         } else if (subTree.isFunctionCall()) {
             // check that the number and type of parameters match those
@@ -177,10 +207,16 @@ public class SemanticChecker {
             Symbol functionSymbol;
             int numArgs;
 
-            functionCallTree = (TigerTree) subTree.getChild(0);
-            functionScope = currentScope.lookupScope(functionCallTree.toString());
-            functionSymbol = functionScope.getSymbol(functionCallTree.toString());
-            typeScope = functionScope.getDataTypeScope(functionSymbol);
+            try {
+                functionCallTree = (TigerTree) subTree.getChild(0);
+                functionScope = currentScope.lookupScope(functionCallTree.toString());
+                functionSymbol = functionScope.getSymbol(functionCallTree.toString());
+                typeScope = functionScope.lookupDefinedTypeScope(functionSymbol.getDataType());
+            } catch (SymbolNotFoundException e) {
+                raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                return;
+            }
+
             numArgs = 0;
 
             if (functionCallTree.getChildren() != null) {
@@ -191,10 +227,22 @@ public class SemanticChecker {
                 raiseError("wrong number of arguments passed to function '" + functionSymbol.getName() + "'", subTree.getLine());
             }
 
-            for (int i = 0; i < functionSymbol.getNumParameters(); i++) {
-                String dataType = resolveDataTypes(functionSymbol.getParameter(i).getDataType(), ((TigerTree) functionCallTree.getChild(i)).getDataType());
+            TigerTree parameterTree;
+            String dataType;
+            Scope parameterTypeScope;
 
-                if (dataType == null || !dataType.equals(functionSymbol.getParameter(i).getDataType())) {
+            for (int i = 0; i < functionSymbol.getNumParameters(); i++) {
+                parameterTree = (TigerTree) functionCallTree.getChild(i);
+                dataType = resolveLeftDataTypeNames(functionSymbol.getParameter(i).getDataType(), parameterTree.getDataType());
+
+                try {
+                    parameterTypeScope = functionScope.lookupDefinedTypeScope(functionSymbol.getParameter(i).getDataType());
+                } catch (SymbolNotFoundException e) {
+                    raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                    return;
+                }
+
+                if (dataType == null || parameterTypeScope != parameterTree.getDataTypeScope()) {
                     raiseError("argument types do not match parameter types in function definition", subTree.getLine());
                 }
             }
@@ -495,9 +543,9 @@ public class SemanticChecker {
     }
 
     private String resolveTypeEquivalence(TigerTree left, TigerTree right) {
-        String dataType = resolveDataTypes(left.getDataType(), right.getDataType());
+        String dataType = resolveDataTypeNames(left.getDataType(), right.getDataType());
 
-        if (dataType != null && left.getDataTypeScope() == right.getDataTypeScope()) {
+        if (left.getDataTypeScope() == right.getDataTypeScope()) {
             return dataType;
         } else {
             return null;
@@ -505,9 +553,9 @@ public class SemanticChecker {
     }
 
     private String resolveLeftTypeEquivalence(TigerTree left, TigerTree right) {
-        String dataType = resolveDataTypes(left.getDataType(), right.getDataType());
+        String dataType = resolveLeftDataTypeNames(left.getDataType(), right.getDataType());
 
-        if (dataType != null && dataType.equals(left.getDataType()) && left.getDataTypeScope() == right.getDataTypeScope()) {
+        if (left.getDataTypeScope() == right.getDataTypeScope()) {
             return dataType;
         } else {
             return null;
@@ -515,28 +563,38 @@ public class SemanticChecker {
     }
 
     private String resolveReturnTypeEquivalence(TigerTree left, TigerTree right) {
-        String returnType = resolveDataTypes(left.getReturnType(), right.getReturnType());
+        String returnType = resolveDataTypeNames(left.getReturnType(), right.getReturnType());
 
-        if (returnType != null && left.getReturnTypeScope() == right.getReturnTypeScope()) {
+        if (left.getReturnTypeScope() == right.getReturnTypeScope()) {
             return returnType;
         } else {
             return null;
         }
     }
 
-    private String resolveDataTypes(String dataType1, String dataType2) {
+    private String resolveDataTypeNames(String left, String right) {
         // resolves two data types. if mixed 'int' and 'fixedpt',
         // return fixedpt. if the two types are equal, return that
         // type. otherwise, return null.
 
         if (
-            dataType1.equals("fixedpt") && dataType2.equals("fixedpt") ||
-            dataType1.equals("int") && dataType2.equals("fixedpt") ||
-            dataType1.equals("fixedpt") && dataType2.equals("int")
+            left.equals("fixedpt") && right.equals("fixedpt") ||
+            left.equals("int") && right.equals("fixedpt") ||
+            left.equals("fixedpt") && right.equals("int")
         ) {
             return "fixedpt";
-        } else if (dataType1.equals(dataType2)) {
-            return dataType1;
+        } else if (left.equals(right)) {
+            return left;
+        } else {
+            return null;
+        }
+    }
+
+    private String resolveLeftDataTypeNames(String left, String right) {
+        String dataType = resolveDataTypeNames(left, right);
+
+        if (dataType != null && dataType.equals(left)) {
+            return dataType;
         } else {
             return null;
         }
