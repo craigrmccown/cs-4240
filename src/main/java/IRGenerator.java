@@ -38,7 +38,7 @@ public class IRGenerator {
     }
 
     public String createTemp(Scope scope) {
-        //while (scope.exists("t" + tempCount)) tempCount++;
+        while (scope.exists("t" + tempCount)) tempCount++;
         String ret = "t" + tempCount;
         tempCount++;
         return ret;

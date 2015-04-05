@@ -557,7 +557,7 @@ public class SemanticChecker {
 
                 if (typeSymbol.getSymbolType() == Symbol.ARRAYTYPE) {
                     generator.emit(IntermediateCode.ARRAY_LOAD, t1,
-                            variableTree.getChild(0).getChild(0).toString(), t2);
+                            variableTree.toString(), t2);
                 } else {
                     //array flattening
                     String t3 = generate((TigerTree) variableTree.getChild(1));
@@ -565,7 +565,7 @@ public class SemanticChecker {
                     generator.emit(IntermediateCode.MULT, t2, "" + typeSymbol.getSize2d(), t4);
                     generator.emit(IntermediateCode.ADD, t4, t3, t4);
                     generator.emit(IntermediateCode.ARRAY_LOAD, t1,
-                            variableTree.getChild(0).getChild(0).toString(), t4);
+                            variableTree.toString(), t4);
 
                 } return t1;
             } else return variableTree.toString();
@@ -621,11 +621,18 @@ public class SemanticChecker {
             return "";
         } else if (subTree.isFunctionDeclaration()) {
 
-        } else if (subTree.isTypeDeclaration()) {
+            generator.emitLabel(subTree.getChild(1).toString());
+            generate((TigerTree) subTree.getChild(3));
+            return "";
 
-        }
+        } else if (subTree.isReturnStatement()) {
+            if (subTree.getChildCount() > 0) {
+                String t1 = generate((TigerTree) subTree.getChild(0));
+                generator.emit(IntermediateCode.RETURN, t1, "", "");
+            } else generator.emit(IntermediateCode.RETURN, "", "", "");
+            return "";
 
-        else if (subTree.getChildCount() > 0) {
+        } else if (subTree.getChildCount() > 0) {
             for (int i = 0; i < subTree.getChildCount(); i++) {
                 generate((TigerTree) subTree.getChild(i));
             }
