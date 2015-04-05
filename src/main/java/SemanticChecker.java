@@ -439,22 +439,22 @@ public class SemanticChecker {
         } else if (subTree.isForLoop()) {
 
             //this takes the form:
-            //  for t2 := t1 to t3 do <body>
+            //  for t1 := t2 to t3 do <body>
 
             String label1 = generator.createLabel();
             String label2 = generator.createLabel();
-            //Yup, this is ugly. This is the initial value of the loop
+            //Yup, this is ugly. This is the index variable
             String t1 = generate((TigerTree) subTree.getChild(0).getChild(0).getChild(0));
-            //this is the index variable
-            String t2 = generate((TigerTree) subTree.getChild(0).getChild(1));
-            generator.emit(IntermediateCode.ASSIGN, t2, t1, "");
+            //this is the initial value of the index variable
+            String t2 = generate((TigerTree) subTree.getChild(0).getChild(0).getChild(1));
+            generator.emit(IntermediateCode.ASSIGN, t1, t2, "");
             generator.emitLabel(label1);
             //this is the end condition value
-            String t3 = generate((TigerTree) subTree.getChild(0).getChild(0).getChild(1));
-            generator.emit(IntermediateCode.BRGT, t2, t3, label2);
+            String t3 = generate((TigerTree) subTree.getChild(0).getChild(1));
+            generator.emit(IntermediateCode.BRGT, t1, t3, label2);
             //generate body of loop
             generate((TigerTree) subTree.getChild(1));
-            generator.emit(IntermediateCode.ADD, t2, "1", t2);
+            generator.emit(IntermediateCode.ADD, t1, "1", t1);
             generator.emit(IntermediateCode.GOTO, label1, "","");
             generator.emitLabel(label2);
             return "";
