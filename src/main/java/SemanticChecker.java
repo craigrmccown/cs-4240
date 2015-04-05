@@ -323,56 +323,91 @@ public class SemanticChecker {
             generator.emit(opcode, t1, t2, ret);
             return ret;
 
-        } else if (subTree.isAndOperator()) {
+        }
 
-            TigerTree firstChild = (TigerTree) subTree.getChild(0);
+        else if (subTree.isAndOperator()) {
+
             String ret = generator.createTemp(subTree.getCurrentScope());
-            String t1 = generate(firstChild);
+            String t1 = generate((TigerTree) subTree.getChild(0));
 
-            //short circuit if child is an expression
-            if (firstChild.isConditionalOperator() || firstChild.isArithmeticOperator()) {
-                //there's no goto_if in our IR opcode list
-                //so I got around that by using break-equal to zero
+            String label1 = generator.createLabel();
+            generator.emit(IntermediateCode.ASSIGN, ret, t1, "");
+            generator.emit(IntermediateCode.BREQ, t1, "0", label1);
+            String t2 = generate((TigerTree) subTree.getChild(1));
+            generator.emit(IntermediateCode.AND, ret, t2, ret);
+            generator.emitLabel(label1);
 
-                String label1 = generator.createLabel();
-                generator.emit(IntermediateCode.ASSIGN, ret, t1, "");
-                generator.emit(IntermediateCode.BREQ, t1, "0", label1);
-                String t2 = generate((TigerTree) subTree.getChild(1));
-                generator.emit(IntermediateCode.ASSIGN, ret, t2, "");
-                generator.emitLabel(label1);
-            } else {
-                String t2 = generate((TigerTree) subTree.getChild(1));
-                generator.emit(IntermediateCode.AND, t1, t2, ret);
-            }
             return ret;
 
         } else if (subTree.isOrOperator()) {
 
-            TigerTree firstChild = (TigerTree) subTree.getChild(0);
+            String label1 = generator.createLabel();
             String ret = generator.createTemp(subTree.getCurrentScope());
-            String t1 = generate(firstChild);
+            //get truth value of left side
+            String t1 = generate((TigerTree) subTree.getChild(0));
 
-            //short circuit if child is an expression
-            if (firstChild.isConditionalOperator() || firstChild.isArithmeticOperator()) {
 
-                String label1 = generator.createLabel();
-                generator.emit(IntermediateCode.ASSIGN, ret, t1, "");
-                generator.emit(IntermediateCode.BRNEQ, t1, "0", label1);
-                String t2 = generate((TigerTree) subTree.getChild(1));
-                generator.emit(IntermediateCode.ASSIGN, ret, t2, "");
-                generator.emitLabel(label1);
-            } else {
-                String t2 = generate((TigerTree) subTree.getChild(1));
-                generator.emit(IntermediateCode.OR, t1, t2, ret);
-            }
+            generator.emit(IntermediateCode.ASSIGN, ret, t1, "");
+            generator.emit(IntermediateCode.BRNEQ, t1, "0", label1);
+            String t2 = generate((TigerTree) subTree.getChild(1));
+            generator.emit(IntermediateCode.OR, ret, t2, ret);
+            generator.emitLabel(label1);
+
             return ret;
 
-        } else if (subTree.isIfStatement()) {
+        } else if (subTree.isConditionalOperator()) {
+            switch (subTree.getType()) {
+                case TigerLexer.LESS_THAN:
+                    opcode = IntermediateCode.BRLT;
+                    break;
+                case TigerLexer.GREATER_THAN:
+                    opcode = IntermediateCode.BRGT;
+                    break;
+                case TigerLexer.LESS_THAN_EQUAL:
+                    opcode = IntermediateCode.BRLEQ;
+                    break;
+                case TigerLexer.GREATER_THAN_EQUAL:
+                    opcode = IntermediateCode.BRGEQ;
+                    break;
+                case TigerLexer.EQUALS:
+                    opcode = IntermediateCode.BREQ;
+                    break;
+                case TigerLexer.NOT_EQUAL:
+                    opcode = IntermediateCode.BRNEQ;
+                    break;
+                default:
+                    System.out.println("yeah that's not good");
+            }
+            //really not sure of the best way to do this,
+            //currently assigning a temp var to 1, then if
+            //the condition is true it skips over the assignment to 0.
+            //the reason for this is that the truth false value of this could
+            //matter if this is nested in other conditionals
             String label1 = generator.createLabel();
+            String ret = generator.createTemp(subTree.getCurrentScope());
+            generator.emit(IntermediateCode.ASSIGN, ret, "1", "");
+            //generate both sides since there's no short circuiting here
             String t1 = generate((TigerTree) subTree.getChild(0));
-            generator.emit(IntermediateCode.BRNEQ, t1, "0", label1);
-            generate((TigerTree) subTree.getChild(1));
+            String t2 = generate((TigerTree) subTree.getChild(1));
+            generator.emit(opcode, t1, t2, label1);
+            generator.emit(IntermediateCode.ASSIGN, ret, "0", "");
             generator.emitLabel(label1);
+            return ret;
+        }
+
+        else if (subTree.isIfStatement()) {
+
+            String label1 = generator.createLabel();
+            //evaluate conditional
+            String t1 = generate((TigerTree) subTree.getChild(0));
+            //generate the then block
+            generate((TigerTree) subTree.getChild(1).getChild(0));
+            //spot that the boolean check jumps to if false
+            generator.emitLabel(label1);
+            if (subTree.getChildCount() == 3) {
+                //generate else block
+                generate((TigerTree) subTree.getChild(2).getChild(0));
+            }
             return "";
 
         } else if (subTree.isWhileLoop()) {
@@ -431,7 +466,7 @@ public class SemanticChecker {
                 return "";
             }
 
-            if (functionSymbol.getDataType() != null) {
+            if (!functionSymbol.getDataType().equals("VOID")) {
                 String ret = generator.createTemp(subTree.getCurrentScope());
                 generator.emitCallWithReturn(IntermediateCode.CALLR, paramTree.toString(), ret, params);
             } else {
@@ -444,7 +479,7 @@ public class SemanticChecker {
             TigerTree rightTree = (TigerTree) subTree.getChild(1);
             TigerTree leftTree = (TigerTree) subTree.getChild(0);
 
-            String t1 = leftGenerate((TigerTree) subTree.getChild(0));
+            String t1 = leftGenerate(leftTree);
 
             if (rightTree.isFunctionCall()) {
 
@@ -507,13 +542,15 @@ public class SemanticChecker {
 
                 if (typeSymbol.getSymbolType() == Symbol.ARRAYTYPE) {
                     generator.emit(IntermediateCode.ARRAY_LOAD, t1,
-                            variableTree.getChild(0).toString(), t2);
+                            variableTree.getChild(0).getChild(0).toString(), t2);
                 } else {
                     //array flattening
                     String t3 = generate((TigerTree) variableTree.getChild(1));
                     String t4 = generator.createTemp(subTree.getCurrentScope());
                     generator.emit(IntermediateCode.MULT, t2, "" + typeSymbol.getSize2d(), t4);
-                    generator.emit(IntermediateCode.ADD, t4, t3, t1);
+                    generator.emit(IntermediateCode.ADD, t4, t3, t4);
+                    generator.emit(IntermediateCode.ARRAY_LOAD, t1,
+                            variableTree.getChild(0).getChild(0).toString(), t4);
 
                 } return t1;
             } else return variableTree.toString();
@@ -536,7 +573,6 @@ public class SemanticChecker {
         }
 
         else if (subTree.getChildCount() > 0) {
-            System.out.println(subTree.toString());
             for (int i = 0; i < subTree.getChildCount(); i++) {
                 generate((TigerTree) subTree.getChild(i));
             }
@@ -565,7 +601,7 @@ public class SemanticChecker {
             String t1 = generate((TigerTree) variableTree.getChild(0));
 
             if (typeSymbol.getSymbolType() == Symbol.ARRAYTYPE) {
-                return generate((TigerTree) variableTree.getChild(0));
+                return t1;
             } else {
                 //array flattening
                 String t2 = generate((TigerTree) variableTree.getChild(1));
