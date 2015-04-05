@@ -200,7 +200,7 @@ stat
     : id=ID! funct_call_or_assignment[$id] SEMICOLON!
     | IF expr THEN stat_seq stat_else ENDIF SEMICOLON -> ^(IF expr ^(THEN stat_seq) stat_else?)
     | WHILE expr DO stat_seq ENDDO SEMICOLON -> ^(WHILE expr ^(DO stat_seq))
-    | FOR ID ASSIGNMENT_OP index_expr TO index_expr DO stat_seq ENDDO SEMICOLON -> ^(FOR ^(TO ^(ASSIGNMENT_OP index_expr index_expr) ID) ^(DO stat_seq))
+    | FOR ID ASSIGNMENT_OP index_expr TO index_expr DO stat_seq ENDDO SEMICOLON -> ^(FOR ^(TO ^(ASSIGNMENT_OP ^(VALUE ID) index_expr) index_expr) ^(DO stat_seq))
     | BREAK SEMICOLON
     | RETURN expr SEMICOLON -> ^(RETURN expr)
     | block

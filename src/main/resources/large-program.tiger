@@ -100,7 +100,7 @@ begin
         m1[2][2] := 1.0;
         m2[2][2] := 1.0;
         m3 := mat_mult(m1, m2);
-        for i := 0 to 2 do
+        for i := 1 to 2 do
             for j := 0 to 2 do
                 list1[j + i * 3] := m3[i][j];
             enddo;

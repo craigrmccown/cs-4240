@@ -69,8 +69,6 @@ public class SemanticChecker {
 
                 subTree.setDataType(typeSymbol.getDataType(), null);
             }
-
-            return;
         }
 
         // recurse to children and build symbol table
@@ -109,6 +107,8 @@ public class SemanticChecker {
             if (dataType == null) {
                 raiseError("cannot assign value of type '" + right.getDataType() + "' to variable of type '" + left.getDataType() + "'", subTree.getLine());
             }
+
+            subTree.setDataType(dataType, left.getDataTypeScope());
         } else if (subTree.isArithmeticOperator() || subTree.isConditionalOperator()) {
             // set the data type of the current tree by
             // resolving the types of its left and right child.
@@ -259,6 +259,21 @@ public class SemanticChecker {
 
             if (!whileTree.getDataType().equals("@boolean")) {
                 raiseError("boolean expression required in while loop header, got '" + whileTree.getDataType() + "'", subTree.getLine());
+            }
+        } else if (subTree.isForLoop()) {
+            // check that the for loop 'to' expression is an int
+
+            TigerTree toTree, left, right;
+            String dataType;
+
+            toTree = (TigerTree) subTree.getChild(0);
+            left = (TigerTree) toTree.getChild(0);
+            right = (TigerTree) toTree.getChild(1);
+
+            dataType = resolveDataTypeNames(left.getDataType(), right.getDataType());
+
+            if (dataType == null || !dataType.equals("int")) {
+                raiseError("for loop 'to' clause must produce an value of type 'int'", subTree.getLine());
             }
         } else if (subTree.isIfStatement()) {
             // check that the if statement header is a boolean expression
