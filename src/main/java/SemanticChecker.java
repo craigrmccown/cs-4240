@@ -69,8 +69,6 @@ public class SemanticChecker {
 
                 subTree.setDataType(typeSymbol.getDataType(), null);
             }
-
-            return;
         }
 
         // recurse to children and build symbol table
