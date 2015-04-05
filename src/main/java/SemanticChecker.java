@@ -572,12 +572,50 @@ public class SemanticChecker {
 
         } else if (subTree.isVariableDeclaration()) {
             int numVars = subTree.getChildCount() - 1;
+            Symbol symbol = null;
+            String type = subTree.getChild(0).toString();
+
+            if (!type.equals("int") && !type.equals("fixedpt")) {
+                try {
+                    symbol = subTree.getCurrentScope().lookup(subTree.getChild(0).toString());
+                } catch (SymbolNotFoundException e) {
+                    raiseError("undefined symbol named '" + e.getSymbolName() + "'", subTree.getLine());
+                    return "";
+                }
+            }
+
             if (((TigerTree) subTree.getChild(numVars)).isOptionalInit()) {
                 String t1 = ((TigerTree) subTree.getChild(numVars).getChild(0)).toString();
                 numVars--;
                 for (int i = 0; i < numVars; i++) {
-                    generator.emit(IntermediateCode.ASSIGN,
+                    if (symbol != null) {
+                        if (symbol.getSymbolType() == Symbol.ARRAYTYPE) {
+                            generator.emit(IntermediateCode.ARRAY_ASSIGN,
+                                    subTree.getChild(i + 1).toString(), "" + symbol.getSize(), t1);
+                        } else if (symbol.getSymbolType() == Symbol.ARRAY2DTYPE) {
+                            String t2 = generator.createTemp(subTree.getCurrentScope());
+                            generator.emit(IntermediateCode.MULT,
+                                    "" + symbol.getSize(), "" + symbol.getSize2d(), t2);
+                            generator.emit(IntermediateCode.ARRAY_LOAD,
+                                    subTree.getChild(i + 1).toString(), t2, t1);
+                        }
+                    } else generator.emit(IntermediateCode.ASSIGN,
                             subTree.getChild(i + 1).toString(), t1, "");
+                }
+            } else if (symbol != null ) {
+                if (symbol.getSymbolType() == Symbol.ARRAYTYPE) {
+                    for (int i = 0; i < numVars; i++) {
+                        generator.emit(IntermediateCode.ARRAY_ASSIGN,
+                                subTree.getChild(i + 1).toString(), "" + symbol.getSize(), "0");
+                    }
+                } else if (symbol.getSymbolType() == Symbol.ARRAY2DTYPE) {
+                    for (int i = 0; i < numVars; i++) {
+                        String t2 = generator.createTemp(subTree.getCurrentScope());
+                        generator.emit(IntermediateCode.MULT,
+                                "" + symbol.getSize(), "" + symbol.getSize2d(), t2);
+                        generator.emit(IntermediateCode.ARRAY_LOAD,
+                                subTree.getChild(i + 1).toString(), t2, "0");
+                    }
                 }
             }
             return "";
