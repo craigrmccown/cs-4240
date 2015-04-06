@@ -310,7 +310,7 @@ public class SemanticChecker {
     }
 
     private void secondPass(TigerTree subTree) {
-        generate((TigerTree) subTree);
+        System.out.println(generate(subTree));
     }
 
     private String generate(TigerTree subTree) {
@@ -620,8 +620,7 @@ public class SemanticChecker {
             }
             return "";
         } else if (subTree.isFunctionDeclaration()) {
-
-            generator.emitLabel(subTree.getChild(1).toString());
+            generator.emitLabel("func_" + subTree.getChild(1).toString()); // prefix with 'func_' to avoid label collisions
             generate((TigerTree) subTree.getChild(3));
             return "";
 
