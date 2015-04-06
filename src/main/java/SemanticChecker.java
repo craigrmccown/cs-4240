@@ -310,6 +310,7 @@ public class SemanticChecker {
     }
 
     private void secondPass(TigerTree subTree) {
+        generator.emit(IntermediateCode.GOTO, "main", "", "");
         generate((TigerTree) subTree);
     }
 
