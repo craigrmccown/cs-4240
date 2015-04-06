@@ -34,6 +34,10 @@ public class TigerTree extends CommonTree {
         return getType() == TigerLexer.BLOCK;
     }
 
+    public boolean isMain() {
+        return getType() == TigerLexer.MAIN;
+    }
+
     public boolean isSymbolDeclaration() {
         return getType() == TigerLexer.TYPE || getType() == TigerLexer.VAR || getType() == TigerLexer.FUNCTION;
     }

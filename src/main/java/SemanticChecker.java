@@ -412,6 +412,7 @@ public class SemanticChecker {
             String label1 = generator.createLabel();
             //evaluate conditional
             String t1 = generate((TigerTree) subTree.getChild(0), innerLoopLabel);
+            generator.emit(IntermediateCode.BREQ, t1, "0", label1);
             //generate the then block
             generate((TigerTree) subTree.getChild(1).getChild(0), innerLoopLabel);
             //spot that the boolean check jumps to if false
@@ -617,7 +618,12 @@ public class SemanticChecker {
             return "";
         } else if (subTree.isFunctionDeclaration()) {
             generator.emitLabel("func_" + subTree.getChild(1).toString()); // prefix with 'func_' to avoid label collisions
-            generate((TigerTree) subTree.getChild(3), innerLoopLabel);
+            for (int i = 2; i < subTree.getChildCount(); i++) {
+                if (((TigerTree) subTree.getChild(i)).isBlock()) {
+                    generate((TigerTree) subTree.getChild(i), innerLoopLabel);
+                }
+            }
+            if (subTree.getChild(0).toString().equals("VOID")) generator.emit(IntermediateCode.RETURN, "", "", "");
             return "";
 
         } else if (subTree.isReturnStatement()) {
@@ -631,7 +637,14 @@ public class SemanticChecker {
             if (innerLoopLabel != null) {
                 generator.emit(IntermediateCode.GOTO, innerLoopLabel, "", "");
             }
-        } else {
+        } else if (subTree.isMain()) {
+            generator.emitLabel("main");
+            for (int i = 1; i < subTree.getChildCount(); i++) {
+                generate((TigerTree) subTree.getChild(i), null);
+            }
+        }
+
+        else {
             for (int i = 0; i < subTree.getChildCount(); i++) {
                 generate((TigerTree) subTree.getChild(i), innerLoopLabel);
             }
