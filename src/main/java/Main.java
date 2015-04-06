@@ -17,7 +17,7 @@ public class Main {
             parser.setTreeAdaptor(new TigerTreeAdaptor());
             TigerTree tree = (TigerTree) parser.tiger_program().getTree();
 
-            if (!parser.successful()) throw new RuntimeException();
+            if (!parser.successful()) throw new RuntimeException("parse error");
 
             SemanticChecker semanticChecker = new SemanticChecker();
             semanticChecker.check(tree);
