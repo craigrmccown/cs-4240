@@ -310,10 +310,10 @@ public class SemanticChecker {
     }
 
     private void secondPass(TigerTree subTree) {
-        System.out.println(generate(subTree));
+        System.out.println(generate(subTree, null));
     }
 
-    private String generate(TigerTree subTree) {
+    private String generate(TigerTree subTree, String innerLoopLabel) {
         int opcode = -1;
         if (subTree.isArithmeticOperator()) {
             switch (subTree.getType()) {
@@ -332,23 +332,21 @@ public class SemanticChecker {
                 default:
                     System.out.println("Something is seriously broken");
             }
-            String t1 = generate((TigerTree) subTree.getChild(0));
-            String t2 = generate((TigerTree) subTree.getChild(1));
+            String t1 = generate((TigerTree) subTree.getChild(0), null);
+            String t2 = generate((TigerTree) subTree.getChild(1), null);
             String ret = createTemp(generator, subTree);
             generator.emit(opcode, t1, t2, ret);
             return ret;
 
-        }
-
-        else if (subTree.isAndOperator()) {
+        } else if (subTree.isAndOperator()) {
 
             String ret = createTemp(generator, subTree);
-            String t1 = generate((TigerTree) subTree.getChild(0));
+            String t1 = generate((TigerTree) subTree.getChild(0), null);
 
             String label1 = generator.createLabel();
             generator.emit(IntermediateCode.ASSIGN, ret, t1, "");
             generator.emit(IntermediateCode.BREQ, t1, "0", label1);
-            String t2 = generate((TigerTree) subTree.getChild(1));
+            String t2 = generate((TigerTree) subTree.getChild(1), null);
             generator.emit(IntermediateCode.AND, ret, t2, ret);
             generator.emitLabel(label1);
 
@@ -359,12 +357,12 @@ public class SemanticChecker {
             String label1 = generator.createLabel();
             String ret = createTemp(generator, subTree);
             //get truth value of left side
-            String t1 = generate((TigerTree) subTree.getChild(0));
+            String t1 = generate((TigerTree) subTree.getChild(0), null);
 
 
             generator.emit(IntermediateCode.ASSIGN, ret, t1, "");
             generator.emit(IntermediateCode.BRNEQ, t1, "0", label1);
-            String t2 = generate((TigerTree) subTree.getChild(1));
+            String t2 = generate((TigerTree) subTree.getChild(1), null);
             generator.emit(IntermediateCode.OR, ret, t2, ret);
             generator.emitLabel(label1);
 
@@ -402,26 +400,24 @@ public class SemanticChecker {
             String ret = createTemp(generator, subTree);
             generator.emit(IntermediateCode.ASSIGN, ret, "1", "");
             //generate both sides since there's no short circuiting here
-            String t1 = generate((TigerTree) subTree.getChild(0));
-            String t2 = generate((TigerTree) subTree.getChild(1));
+            String t1 = generate((TigerTree) subTree.getChild(0), null);
+            String t2 = generate((TigerTree) subTree.getChild(1), null);
             generator.emit(opcode, t1, t2, label1);
             generator.emit(IntermediateCode.ASSIGN, ret, "0", "");
             generator.emitLabel(label1);
             return ret;
-        }
-
-        else if (subTree.isIfStatement()) {
+        } else if (subTree.isIfStatement()) {
 
             String label1 = generator.createLabel();
             //evaluate conditional
-            String t1 = generate((TigerTree) subTree.getChild(0));
+            String t1 = generate((TigerTree) subTree.getChild(0), null);
             //generate the then block
-            generate((TigerTree) subTree.getChild(1).getChild(0));
+            generate((TigerTree) subTree.getChild(1).getChild(0), null);
             //spot that the boolean check jumps to if false
             generator.emitLabel(label1);
             if (subTree.getChildCount() == 3) {
                 //generate else block
-                generate((TigerTree) subTree.getChild(2).getChild(0));
+                generate((TigerTree) subTree.getChild(2).getChild(0), null);
             }
             return "";
 
@@ -429,9 +425,9 @@ public class SemanticChecker {
             String label1 = generator.createLabel();
             String label2 = generator.createLabel();
             generator.emitLabel(label1);
-            String t1 = generate((TigerTree) subTree.getChild(0));
+            String t1 = generate((TigerTree) subTree.getChild(0), label2);
             generator.emit(IntermediateCode.BREQ, t1, "0", label2);
-            generate((TigerTree) subTree.getChild(1));
+            generate((TigerTree) subTree.getChild(1), label2);
             generator.emit(IntermediateCode.GOTO, label1, "", "");
             generator.emitLabel(label2);
             return "";
@@ -444,18 +440,18 @@ public class SemanticChecker {
             String label1 = generator.createLabel();
             String label2 = generator.createLabel();
             //Yup, this is ugly. This is the index variable
-            String t1 = generate((TigerTree) subTree.getChild(0).getChild(0).getChild(0));
+            String t1 = generate((TigerTree) subTree.getChild(0).getChild(0).getChild(0), label2);
             //this is the initial value of the index variable
-            String t2 = generate((TigerTree) subTree.getChild(0).getChild(0).getChild(1));
+            String t2 = generate((TigerTree) subTree.getChild(0).getChild(0).getChild(1), label2);
             generator.emit(IntermediateCode.ASSIGN, t1, t2, "");
             generator.emitLabel(label1);
             //this is the end condition value
-            String t3 = generate((TigerTree) subTree.getChild(0).getChild(1));
+            String t3 = generate((TigerTree) subTree.getChild(0).getChild(1), null);
             generator.emit(IntermediateCode.BRGT, t1, t3, label2);
             //generate body of loop
-            generate((TigerTree) subTree.getChild(1));
+            generate((TigerTree) subTree.getChild(1), null);
             generator.emit(IntermediateCode.ADD, t1, "1", t1);
-            generator.emit(IntermediateCode.GOTO, label1, "","");
+            generator.emit(IntermediateCode.GOTO, label1, "", "");
             generator.emitLabel(label2);
             return "";
 
@@ -468,7 +464,7 @@ public class SemanticChecker {
             String[] params = new String[paramTree.getChildCount()];
 
             for (int i = 0; i < subTree.getChildCount(); i++) {
-                params[i] = generate((TigerTree) paramTree.getChild(i));
+                params[i] = generate((TigerTree) paramTree.getChild(i), null);
             }
 
             Symbol functionSymbol;
@@ -502,7 +498,7 @@ public class SemanticChecker {
                 String[] params = new String[paramTree.getChildCount()];
 
                 for (int i = 0; i < paramTree.getChildCount(); i++) {
-                    params[i] = generate((TigerTree) paramTree.getChild(i));
+                    params[i] = generate((TigerTree) paramTree.getChild(i), null);
                 }
                 if (leftTree.isArray()) {
                     String t2 = createTemp(generator, subTree);
@@ -517,7 +513,7 @@ public class SemanticChecker {
 
             } else {
 
-                String t2 = generate(rightTree);
+                String t2 = generate(rightTree, null);
                 if (leftTree.isArray()) {
                     generator.emit(IntermediateCode.ARRAY_STORE,
                             leftTree.getChild(0).toString(), t1, t2);
@@ -532,9 +528,7 @@ public class SemanticChecker {
 
         } else if (subTree.isID()) {
             return subTree.toString();
-        }
-
-        else if (subTree.isVariableReference()) {
+        } else if (subTree.isVariableReference()) {
 
             TigerTree variableTree = (TigerTree) subTree.getChild(0);
 
@@ -553,21 +547,22 @@ public class SemanticChecker {
                 Symbol typeSymbol = typeScope.getSymbol(symbol.getDataType());
 
                 String t1 = createTemp(generator, subTree);
-                String t2 = generate((TigerTree) variableTree.getChild(0));
+                String t2 = generate((TigerTree) variableTree.getChild(0), null);
 
                 if (typeSymbol.getSymbolType() == Symbol.ARRAYTYPE) {
                     generator.emit(IntermediateCode.ARRAY_LOAD, t1,
                             variableTree.toString(), t2);
                 } else {
                     //array flattening
-                    String t3 = generate((TigerTree) variableTree.getChild(1));
+                    String t3 = generate((TigerTree) variableTree.getChild(1), null);
                     String t4 = createTemp(generator, subTree);
                     generator.emit(IntermediateCode.MULT, t2, "" + typeSymbol.getSize2d(), t4);
                     generator.emit(IntermediateCode.ADD, t4, t3, t4);
                     generator.emit(IntermediateCode.ARRAY_LOAD, t1,
                             variableTree.toString(), t4);
 
-                } return t1;
+                }
+                return t1;
             } else return variableTree.toString();
 
         } else if (subTree.isVariableDeclaration()) {
@@ -602,7 +597,7 @@ public class SemanticChecker {
                     } else generator.emit(IntermediateCode.ASSIGN,
                             subTree.getChild(i + 1).toString(), t1, "");
                 }
-            } else if (symbol != null ) {
+            } else if (symbol != null) {
                 if (symbol.getSymbolType() == Symbol.ARRAYTYPE) {
                     for (int i = 0; i < numVars; i++) {
                         generator.emit(IntermediateCode.ARRAY_ASSIGN,
@@ -621,19 +616,23 @@ public class SemanticChecker {
             return "";
         } else if (subTree.isFunctionDeclaration()) {
             generator.emitLabel("func_" + subTree.getChild(1).toString()); // prefix with 'func_' to avoid label collisions
-            generate((TigerTree) subTree.getChild(3));
+            generate((TigerTree) subTree.getChild(3), null);
             return "";
 
         } else if (subTree.isReturnStatement()) {
             if (subTree.getChildCount() > 0) {
-                String t1 = generate((TigerTree) subTree.getChild(0));
+                String t1 = generate((TigerTree) subTree.getChild(0), null);
                 generator.emit(IntermediateCode.RETURN, t1, "", "");
             } else generator.emit(IntermediateCode.RETURN, "", "", "");
             return "";
 
-        } else if (subTree.getChildCount() > 0) {
+        } else if (subTree.isBreak()) {
+            if (innerLoopLabel != null) {
+                generator.emit(IntermediateCode.GOTO, innerLoopLabel, "", "");
+            }
+        } else {
             for (int i = 0; i < subTree.getChildCount(); i++) {
-                generate((TigerTree) subTree.getChild(i));
+                generate((TigerTree) subTree.getChild(i), null);
             }
         }
         return "";
@@ -657,13 +656,13 @@ public class SemanticChecker {
 
             Symbol typeSymbol = typeScope.getSymbol(symbol.getDataType());
 
-            String t1 = generate((TigerTree) variableTree.getChild(0));
+            String t1 = generate((TigerTree) variableTree.getChild(0), null);
 
             if (typeSymbol.getSymbolType() == Symbol.ARRAYTYPE) {
                 return t1;
             } else {
                 //array flattening
-                String t2 = generate((TigerTree) variableTree.getChild(1));
+                String t2 = generate((TigerTree) variableTree.getChild(1), null);
                 String t3 = createTemp(generator, subTree);
                 generator.emit(IntermediateCode.MULT, t1, "" + typeSymbol.getSize2d(), t3);
                 generator.emit(IntermediateCode.ADD, t3, t2, t3);

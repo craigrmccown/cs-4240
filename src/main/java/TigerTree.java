@@ -46,6 +46,8 @@ public class TigerTree extends CommonTree {
         return getType() == TigerLexer.TYPE;
     }
 
+    public boolean isBreak() { return getType() == TigerLexer.BREAK; }
+
     public boolean isLiteral() {
         return getType() == TigerLexer.FIXEDPTLIT || getType() == TigerLexer.INTLIT;
     }
