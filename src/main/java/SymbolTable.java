@@ -37,6 +37,10 @@ public class SymbolTable {
         return child;
     }
 
+    public void addTemp(Scope scope, String name, String dataType) {
+        scope.addSymbolUnsafe(name, new Symbol(name, dataType));
+    }
+
     public void handleSymbolDeclaration(Scope scope, TigerTree tree) throws DuplicateSymbolException, SymbolNotFoundException {
         if (tree.getType() == TigerLexer.TYPE) {
             addType(scope, tree);
@@ -95,6 +99,7 @@ public class SymbolTable {
                 varTree.getChild(i).toString(),
                 new Symbol(varTree.getChild(i).toString(), varTree.getChild(0).toString())
             );
+            varTree.setDataType(varTree.getChild(0).toString(), scope);
         }
     }
 

@@ -69,6 +69,23 @@ public class Symbol {
     };
 
     public String toString() {
-        return name;
+        String ret = "";
+
+        switch (symbolType) {
+            case VARTYPE:
+                ret = "{ name: " + name + ", data type: " + dataType + " }";
+                break;
+            case ARRAYTYPE:
+                ret = "{ name: " + name + ", data type: one dimensional array, base type: " + dataType + ", size: " + size + " }";
+                break;
+            case ARRAY2DTYPE:
+                ret = "{ name: " + name + ", data type: two dimensional array, base type: " + dataType + ", rows: " + size + ", columns: " + size2d + " }";
+                break;
+            case FUNCTIONTYPE:
+                ret = "{ name: " + name + ", return type: " + dataType + ", parameters: " + orderedParameters + " }";
+                break;
+        }
+
+        return ret;
     }
 }
