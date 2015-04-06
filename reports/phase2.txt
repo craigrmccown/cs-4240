@@ -1,0 +1,47 @@
+This project was built using Maven. To build, run Maven's compile target. This will install project dependencies, such as
+Antlr, and generate java code based on the grammar file. To run the project, add the folder src/target/classes to your classpath,
+as well as the Maven dependencies installed in the previous step. Then, run the Main class, passing in the name of the tiger file
+you want to parse as an argument.
+
+In phase 2, we created several custom implementations of Antlr classes by subclassing them and using Antlr's TreeAdaptor feature
+to build the parse tree using our custom classes. These classes include TigerTreeAdaptor, TigerTree, TigerErrorNode, and TigerToken.
+The custom TreeAdaptor overrides methods that the generated parser calls in order to generate the objects that make up the parse
+tree. This way, when Antlr builds the parse tree, it uses our classes instead of its own. The TigerTree includes helper methods for
+identifying the type of parse tree node that it represents and also some instance variables to hold attributes. These attributes are
+the data type, the scope of the data type, the return type, and the scope of the return type. The TigerErrorNode was a necessary
+addition to prevent a cast error when a parse error is detected, and the TigerToken is a custom token that sets its own data type
+if it is a literal int or fixedpt.
+
+The symbol table is implemented using three classes: SymbolTable, Scope, and Symbol. SymbolTable represents the entire symbol table;
+it holds a reference to the root scope and provides an API for interacting with the symbol table. Scope represents a program scope,
+and holds a reference to a HashMap of symbols that are defined inside. Each scope holds a reference to its parent scope and a list of
+its child scopes. Lookup operations are performed by examining the current scope and traveling up the parent scope chain until the
+root scope is reached. If the symbol is still not found, the lookup has failedSymbol represents a symbol, which can be either a defined
+type, a variable or a function. The symbol table will raise an exception if a lookup for a non-existant symbol or an addition of an
+existing symbol is encountered. The caller of these operations must then handle these exceptions accordingly.
+
+After a parse tree is successfully generated, the SemanticChecker class performs two "passes" on the tree. Each pass is a traversal
+of the tree, and includes both preorder and postorder operations. The first pass is responsible for building the symbol table, and
+the second pass is responsible for generating the IR code.
+
+In the first pass, preorder operations include the base case that the node has no children and a type assignment to a variable reference.
+Variable references that are dereferenced are assigned the base type of their array. For example, if a variable reference is an array of
+ints and that particular reference is dereferenced once, like t[0], the node is assigned the type int. An incorrect number of dereferences
+produces an error. Every node is also bound to its scope, which becomes useful in the second pass. In the recursive step, the current node
+is added to the symbol table if necessary and the first pass recurses to each child. Post order operations can assume that all children
+have been visited, so every child should have a data type. Certain node types, such as the plus operator, synthesize their data type from
+their children. The data types are first typechecked and any casting (int to fixedpt) is resolved. Other node types, such as the assignment
+operator, use an extra check to make sure that the data type matches the type of the left node. This prevents an fixedpt from being casted
+to an int, but allows an int to be casted to a fixedpt. Return types are also passed from child to parent. This becomes useful when a
+function declaration node is reached; it checks if its return type matches the synthesized return type. A new data type, @boolean is used
+for conditional operators. This allows while loops and if statements to ensure that their headers contain boolean expressions. The '@'
+prefix exists so that the programmer cannot define a datatype called 'boolean', and for sanity. At the end of the first pass, all semantic
+checks are done and the symbol table is built.
+
+In the second pass, preorder and postorder operations depend on the operation currently being generated. Each visitation conditionally
+emits code, generates its children, and emits more code, depending on the type of the node. For example, mathematical operators generate
+the left and right side of the expression, create a temporary variable, and emit an assignment of the result of the generated code joined
+by the correct IR operator. Every temporary variable is safely added to the symbol table. Each node has been bound to its current scope in
+the first pass, so it is trivial to add them into the symbol table upon creation. A unique name for each temporary variable is generated
+by picking a name, asking the symbol table if that name is taken, and repeatedly generating new names until a unique name is found. At the
+end of the second pass, all IR code is generated and ready for the next steps.
