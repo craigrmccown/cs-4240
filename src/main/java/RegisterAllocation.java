@@ -77,9 +77,9 @@ public class RegisterAllocation {
                 String[] temp = s;
                 for(int i = 0; i<numParams; i++) {
                     if(!s[i].matches("^-?[0-9]*\\.?[0-9]+$")) { //not a number
-                        input.emitAtIndex(nodesTraversed+nodesAdded, IntermediateCode.LDR, "$t"+regsUsed, s[i]);
+                        input.emitAtIndex(nodesTraversed+nodesAdded, IntermediateCode.LDR, "$a"+regsUsed, s[i]);
                         nodesAdded++;
-                        input.changeParam(nodesTraversed+nodesAdded, i, "$t"+regsUsed);
+                        input.changeParam(nodesTraversed+nodesAdded, i, "$a"+regsUsed);
                         regsUsed++;
                     }
                 }
