@@ -23,6 +23,8 @@ public abstract class IntermediateCode {
     public static final int ARRAY_STORE = 17;
     public static final int ARRAY_LOAD = 18;
     public static final int ARRAY_ASSIGN = 19;
+    public static final int LDR = 20;
+    public static final int STR = 21;
 
     public static String opString(int opcode) {
         switch (opcode) {
@@ -46,7 +48,35 @@ public abstract class IntermediateCode {
             case ARRAY_STORE: return "arr_store";
             case ARRAY_LOAD: return "arr_load";
             case ARRAY_ASSIGN: return "arr_assign";
+            case LDR: return "load";
+            case STR: return "store";
             default: return "";
         }
+    }
+    
+    public String[] getParams() {
+        return new String[0];
+    }
+
+    /**
+    * Returns the opcode associated with a certain Intermediate Code instruction
+    * 
+    * @param index The index of the instruction in the list
+    * @return The opcode if it had one, -1 if it is a label
+    */
+    public int getOpcode() {
+        return -1;
+    }
+
+    public void changeParam(int paramNum, String param) {
+        
+    }
+
+    public String getRetAddress() {
+        return "";
+    }
+
+    public void changeRetAddress(String retAddress) {
+        
     }
 }

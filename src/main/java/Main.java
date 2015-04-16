@@ -24,6 +24,9 @@ public class Main {
             System.out.println(semanticChecker.getGenerator());
 
             System.out.println(semanticChecker.getSymbolTable());
+            
+            RegisterAllocation reg = new RegisterAllocation();
+            System.out.println(reg.naive(semanticChecker.getGenerator()));
         } catch (IOException e) {
             System.out.println("failed to read input file");
             System.exit(1);
