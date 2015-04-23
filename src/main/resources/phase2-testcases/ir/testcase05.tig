@@ -1,0 +1,15 @@
+int function foo(num : int) begin
+  begin
+    return num - 1;
+  end;
+end;
+
+void main() begin
+  begin
+    var x : int := 4;
+
+    if (x > 5) then
+        x := foo(x);
+    endif;
+  end;
+end;

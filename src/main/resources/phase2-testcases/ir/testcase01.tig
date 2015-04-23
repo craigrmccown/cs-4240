@@ -1,0 +1,12 @@
+void main() begin
+  begin
+    var x : int := 4;
+
+    if (x > 5) then
+      begin
+        var x : fixedpt := 5.0;
+        x := x - 2;
+      end;
+    endif;
+  end;
+end;

@@ -4,21 +4,29 @@ import java.util.List;
 import java.util.Map;
 
 public class Scope {
+    private static int numScopes = 0;
+
+    private int scopeId;
     private String functionKey;
     private Scope parent;
     private Map<String, Symbol> symbols;
     private List<Scope> children;
 
     public Scope(String functionKey) {
+        this.scopeId = numScopes;
         this.functionKey = functionKey;
         this.symbols = new HashMap<String, Symbol>();
         this.children = new ArrayList<Scope>();
+
+        numScopes ++;
     }
 
     public Scope(Scope parent, String functionKey) {
         this(functionKey);
         this.parent = parent;
     }
+
+    public int getScopeId() { return scopeId; }
 
     public void addChildScope(Scope child) { this.children.add(child); }
 

@@ -1,0 +1,23 @@
+void main() begin
+  begin
+    type integer = int;
+    type floatpt = fixedpt;
+   
+    var x : int := 4;
+    var y : integer := 5;
+    var a : fixedpt := 1.0;
+    var b : floatpt := 2.0;
+
+    /* type mismatch */
+    x := x + 1.0;
+    /* type mismatch */
+    x := x + y;
+    /* type mismatch */
+    y := y + 1;
+    a := a + 1;
+    /* type mismatch */
+    a := a + b;
+    /* type mismatch */
+    b := b + 4.0;
+  end;
+end;

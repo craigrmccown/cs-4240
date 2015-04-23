@@ -1,0 +1,20 @@
+type MyArray1 = array [10] of int;
+type MyArray2 = array [10][10] of int;
+
+void main() begin
+  begin
+    var a1 : MyArray1 := 1;
+    var a2 : MyArray2 := 1;
+
+    var x : int := 3;
+    var y : int := 3;
+
+    y := a1[x];
+    y := a2[x][x];
+    a1[x] := y;
+    a2[x][x] := y;
+    a1[x + 1] := a1[x + 2];
+ 
+
+  end;
+end;
