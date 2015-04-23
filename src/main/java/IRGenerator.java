@@ -1,17 +1,12 @@
 import java.util.LinkedList;
 
-/**
- * Created by andrewmehlberg on 4/2/15.
- */
 public class IRGenerator {
 
     private int labelCount, tempCount = 0;
-    private SymbolTable symbolTable;
 
     private LinkedList<IntermediateCode> operations;
 
-    public IRGenerator(SymbolTable symbolTable) {
-        this.symbolTable = symbolTable;
+    public IRGenerator() {
         operations = new LinkedList<IntermediateCode>();
     }
 
@@ -27,8 +22,8 @@ public class IRGenerator {
         operations.addLast(new MultiAddressCode(opcode, name, params));
     }
 
-    public void emitCallWithReturn(int opcode, String name, String retAddress, String[] params) {
-        operations.addLast(new MultiAddressCode(opcode, name, retAddress, params));
+    public void emitCallWithReturn(int opcode, String retAddress, String name, String[] params) {
+        operations.addLast(new MultiAddressCode(opcode, retAddress, name, params));
     }
 
     public String createLabel() {

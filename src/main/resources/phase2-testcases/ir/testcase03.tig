@@ -1,0 +1,10 @@
+void main() begin
+  begin
+    var i, x : int := 4;
+
+    for i := 0 to 5 do
+        x := x + 1;
+    enddo;
+    x := 5;
+  end;
+end;

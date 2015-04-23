@@ -1,0 +1,14 @@
+type t_array_a = array[4] of fixedpt;
+type t_array_b = array[4] of int;
+
+void main() begin
+  begin
+    var x : t_array_a := 4.0;
+    var y : t_array_b := 5;
+
+    /* type mismatch */
+    y[0] := 1.0;
+    /* legal */
+    x[0] := y[0] + 1;
+  end;
+end;
