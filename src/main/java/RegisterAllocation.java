@@ -61,8 +61,19 @@ public class RegisterAllocation {
                 naiveIR.add(new FourAddressCode(IntermediateCode.GOTO, s[0], "", ""));
             } else if(opcode == IntermediateCode.RETURN) {
                 // omitting return
-            } else if(opcode == IntermediateCode.CALL || opcode == IntermediateCode.CALLR) { //method call
-                // omitting call and callr
+            } else if(opcode == IntermediateCode.CALL) { //method call
+                // s[0] is function argument
+                MultiAddressCode functionCall = (MultiAddressCode) ir.get(i);
+                if (!isLiteral(s[0])) {
+                    naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[0], ""));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.CALL, "$t0", functionCall.getFunctionName(), ""));
+                } else {
+                    naiveIR.add(new FourAddressCode(IntermediateCode.CALL, s[0], functionCall.getFunctionName(), ""));
+                }
+            } else if (opcode == IntermediateCode.CALLR) {
+                MultiAddressCode functionCall = (MultiAddressCode) ir.get(i);
+                naiveIR.add(new FourAddressCode(IntermediateCode.CALLR, "$t0", functionCall.getFunctionName(), ""));
+                naiveIR.add(new FourAddressCode(IntermediateCode.STR, "$t0", functionCall.getRetAddress(), ""));
             } else if(opcode == IntermediateCode.ARRAY_STORE) {
                 // s[0] is register|array var, s[1] is index, s[2] is value
                 // using '|' character as hack to include more than 3 params

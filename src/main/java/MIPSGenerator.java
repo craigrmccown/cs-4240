@@ -75,10 +75,20 @@ public class MIPSGenerator {
                     // skipping return, not implementing function calls
                     break;
                 case IntermediateCode.CALL:
-                    // skipping call, not implementing function calls
+                    // params[0] is argument (register or immediate value), params[1] is function name
+                    if (params[1].equals("func_printi__0")) {
+                        textBlock += "li $v0, 1\n";
+                        textBlock += "add $a0, $zero, " + params[0] + "\n";
+                        textBlock += "syscall\n";
+                    }
                     break;
                 case IntermediateCode.CALLR:
-                    // skipping callr, not implementing function calls
+                    // params[0] is destination register, params[1] is function name
+                    if (params[1].equals("func_readi__0")) {
+                        textBlock += "li $v0, 5\n";
+                        textBlock += "syscall\n";
+                        textBlock += "move " + params[0] + ", $v0\n";
+                    }
                     break;
                 case IntermediateCode.ARRAY_STORE:
                     // params[0] is register to use|array var, params[1] is index (register or immediate value), params[2] is the register holding the value to store
