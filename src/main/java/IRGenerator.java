@@ -113,8 +113,17 @@ public class IRGenerator {
         operations.get(index).changeRetAddress(retAddress);
     }
 
+/*
+    public IRGenerator getSegment(int start, int end) {
+
+    }*/
+
     public int getSize() {
         return operations.size();
+    }
+    
+    public String toString(int index) {
+        return operations.get(index).toString();
     }
 
     public String toString() {
