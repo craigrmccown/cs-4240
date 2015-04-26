@@ -107,8 +107,6 @@ public class RegisterAllocation {
     }
 
     public void cfgConstruction(IRGenerator input) {
-        //LinkedList<IRGenerator> basicBlocks = new LinkedList<IRGenerator>();
-
         int size = input.getSize();
         int opcode;
         int startBlock = 0;
@@ -182,6 +180,225 @@ public class RegisterAllocation {
                     arr.get(i).addNext(arr.get(i+1));
                     arr.get(i+1).addPrev(arr.get(i));
                 }
+            }
+        }
+
+        /*
+        * Loops through the list of the basic blocks.
+        * Inside each basic block, it loops through the code
+        * and determines which variables need a load operation,
+        * store operation or both. 
+        */
+        for(int i = 0; i<arr.size(); i++) {
+            LinkedList<IntermediateCode> code = arr.get(i).getBlockCode();
+            ArrayList<String> loadVars = new ArrayList<String>();
+            ArrayList<String> storeVars = new ArrayList<String>();
+            ArrayList<String> loadStoreVars = new ArrayList<String>();
+
+            //looping through code determine load/store operations needed
+            for(int j = 0; j<code.size(); j++) {
+                opcode = code.get(j).getOpcode();
+                String[] s = code.get(j).getParams();
+
+                if(opcode == IntermediateCode.ASSIGN) {
+                    storeVars.add(s[0]);
+                    if(!s[1].matches("^-?[0-9]*\\.?[0-9]+$")) {
+                        loadVars.add(s[1]);
+                    }
+                } else if(opcode>=IntermediateCode.ADD && opcode<=IntermediateCode.OR) {
+                    if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$") && !s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //both vars
+                        if(s[0].equals(s[2]) && s[1].equals(s[2])) { //ex: a = a+a
+                            loadStoreVars.add(s[2]);
+                        } else if(s[0].equals(s[2]) && !s[1].equals(s[2])) { //ex: a = a+b
+                            loadStoreVars.add(s[2]);
+                            loadVars.add(s[1]);
+                        } else if(!s[0].equals(s[2]) && s[1].equals(s[2])) { //ex: a = b+a
+                            loadStoreVars.add(s[2]);
+                            loadVars.add(s[0]);
+                        } else { //ex: a = b+c
+                            loadVars.add(s[0]);
+                            loadVars.add(s[1]);
+                            storeVars.add(s[2]);
+                        }
+                    } else if(s[0].matches("^-?[0-9]*\\.?[0-9]+$") && !s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //s[0] = num, s[1] = var
+                        if(s[1].equals(s[2])) { //ex: a = 3+a
+                            loadStoreVars.add(s[2]);
+                        } else { //ex: a = 3+b
+                            loadVars.add(s[1]);
+                            storeVars.add(s[2]);
+                        }
+                    } else if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$") && s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //s[0] = var, s[1] = num
+                        if(s[0].equals(s[2])) { //ex: a = a+3
+                            loadStoreVars.add(s[2]);
+                        } else { //ex: a = b+3
+                            loadVars.add(s[0]);
+                            storeVars.add(s[2]);
+                        }
+                    } else if(s[0].matches("^-?[0-9]*\\.?[0-9]+$") && s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //both nums
+                        //ex: a = 3+5
+                        storeVars.add(s[2]);
+                    }
+                } else if(opcode >= IntermediateCode.BREQ && opcode <= IntermediateCode.BRGEQ) {
+                    if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$")) {
+                        loadVars.add(s[0]);
+                    }
+                    if(!s[1].matches("^-?[0-9]*\\.?[0-9]+$")) {
+                        loadVars.add(s[1]);
+                    }
+                } else if(opcode == IntermediateCode.RETURN) {
+                    if(s[0].length() > 0) { //param in the 1st
+                        if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$")) { //it is a variable
+                            loadVars.add(s[0]);
+                        }
+                    }
+                } else if(opcode == IntermediateCode.CALL || opcode == IntermediateCode.CALLR) {
+                    int numParams = s.length;
+                    for(int k = 0; k<numParams; k++) {
+                        if(!s[k].matches("^-?[0-9]*\\.?[0-9]+$")) { //not a number
+                            loadVars.add(s[k]);
+                        }
+                    }
+                    String retAddress = code.get(j).getRetAddress();
+                    if(opcode == IntermediateCode.CALLR && retAddress.length() > 0) {
+                        storeVars.add(retAddress);
+                    }
+                } else if(opcode == IntermediateCode.ARRAY_STORE) {
+                    //arr[#] = a
+                    if(!s[2].matches("^-?[0-9]*\\.?[0-9]+$")) {
+                        loadVars.add(s[2]);
+                    }
+                } else if(opcode == IntermediateCode.ARRAY_LOAD) {
+                    //a = arr[#]
+                    storeVars.add(s[0]);
+                } else if(opcode == IntermediateCode.ARRAY_ASSIGN) {
+                    //not sure if anything needs to be done
+                }
+            }
+
+            //removing duplicates from storeVars
+            for(int n = 0; n<loadStoreVars.size(); n++) {
+                if(storeVars.contains(loadStoreVars.get(n))) {
+                    for(int j = 0; j<storeVars.size(); j++) {
+                        if(storeVars.get(j).equals(loadStoreVars.get(n))) {
+                            storeVars.remove(j);
+                        }
+                    }
+                }
+            }
+
+            //removing duplicates from loadVars
+            for(int n = 0; n<loadStoreVars.size(); n++) {
+                if(loadVars.contains(loadStoreVars.get(n))) {
+                    for(int j = 0; j<loadVars.size(); j++) {
+                        if(loadVars.get(j).equals(loadStoreVars.get(n))) {
+                            loadVars.remove(j);
+                        }
+                    }
+                }
+            }
+
+            System.out.println("Block "+i);
+            System.out.println("Load vars");
+            for(int n = 0; n<loadVars.size(); n++) {
+                System.out.println("    "+loadVars.get(n));
+            }
+            System.out.println();
+
+            System.out.println("Load Store Vars");
+            for(int n = 0; n<loadStoreVars.size(); n++) {
+                System.out.println("    "+loadStoreVars.get(n));
+            }
+            System.out.println();
+
+            System.out.println("store vars");
+            for(int n = 0; n<storeVars.size(); n++) {
+                System.out.println("    "+storeVars.get(n));
+            }
+            System.out.println();
+
+            //
+            if(loadVars.size() + storeVars.size() + loadStoreVars.size() <= 29) {
+                //can't use $zero, $k0 and $k1 so we are left with 29 available registers
+                //1-25, 28-31
+                String orig;
+                int num = 1;
+
+                
+
+                //make sure the loads and stores are after labels
+                // and before branches
+                boolean labelStarted = false;
+                boolean branchEnded = false;
+                opcode = code.get(0).getOpcode();
+
+                if(opcode == -1) {
+                    labelStarted = true;
+                }
+
+                opcode = code.get(code.size()-1).getOpcode();
+
+                if(opcode >= IntermediateCode.GOTO && opcode <= IntermediateCode.BRGEQ) {
+                    branchEnded = true;
+                }
+
+                for(int j = 0; j<loadVars.size(); j++) {
+                    orig = loadVars.get(j);
+                    arr.get(i).replaceVariable(orig, "lv$"+num);
+                    if(labelStarted) {
+                        arr.get(i).addCode(1, new FourAddressCode(IntermediateCode.LDR, "lv$"+num, orig, ""));
+                    } else {
+                        arr.get(i).addCode(0, new FourAddressCode(IntermediateCode.LDR, "lv$"+num, orig, ""));
+                    }
+
+                    if(num==25) {
+                        num=28;
+                    } else {
+                        num++;
+                    }
+                }
+
+                for(int j = 0; j<loadStoreVars.size(); j++) {
+                    orig = loadStoreVars.get(j);
+                    arr.get(i).replaceVariable(orig, "lsv$"+num);
+                    if(labelStarted) {
+                        arr.get(i).addCode(1, new FourAddressCode(IntermediateCode.LDR, "lsv$"+num, orig, ""));
+                    } else {
+                        arr.get(i).addCode(0, new FourAddressCode(IntermediateCode.LDR, "lsv$"+num, orig, ""));
+                    }
+
+
+                    if(branchEnded) {
+                        arr.get(i).addCode(code.size()-1, new FourAddressCode(IntermediateCode.STR, "lsv$"+num, orig, ""));
+                    } else {
+                        arr.get(i).addCode(new FourAddressCode(IntermediateCode.STR, "lsv$"+num, orig, ""));
+                    }
+
+                    if(num==25) {
+                        num=28;
+                    } else {
+                        num++;
+                    }
+                }
+
+                for(int j = 0; j<storeVars.size(); j++) {
+                    orig = storeVars.get(j);
+                    arr.get(i).replaceVariable(orig, "sv$"+num);
+
+                    if(branchEnded) {
+                        arr.get(i).addCode(code.size()-1, new FourAddressCode(IntermediateCode.STR, "sv$"+num, orig, ""));
+                    } else {
+                        arr.get(i).addCode(new FourAddressCode(IntermediateCode.STR, "sv$"+num, orig, ""));
+                    }
+
+                    if(num==25) {
+                        num=28;
+                    } else {
+                        num++;
+                    }
+                }
+            } else {
+                //need to calculate lowest spill costs
+
             }
         }
         
@@ -265,6 +482,25 @@ public class RegisterAllocation {
                 }
             }
             return false;
+        }
+
+        public void replaceVariable(String orig, String repl) {
+            for(int i = 0; i<block.size(); i++) {
+                String[] s = block.get(i).getParams();
+                for(int j = 0; j<s.length; j++) {
+                    if(s[j].equals(orig)) {
+                        block.get(i).changeParam(j, repl);
+                    }
+                }
+            }
+        }
+
+        public void addCode(int index, IntermediateCode code) {
+            block.add(index, code);
+        }
+
+        public void addCode(IntermediateCode code) {
+            block.add(code);
         }
 
         public ArrayList<BasicBlock> getNextBlocks() {
