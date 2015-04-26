@@ -113,10 +113,15 @@ public class IRGenerator {
         operations.get(index).changeRetAddress(retAddress);
     }
 
-/*
-    public IRGenerator getSegment(int start, int end) {
 
-    }*/
+    public LinkedList<IntermediateCode> getSegment(int start, int end) {
+        LinkedList<IntermediateCode> segment = new LinkedList<IntermediateCode>();
+        for(int i = start; i<=end; i++) {
+            segment.add(operations.get(i));
+        }
+
+        return segment;
+    }
 
     public int getSize() {
         return operations.size();

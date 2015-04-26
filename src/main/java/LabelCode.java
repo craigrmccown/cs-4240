@@ -12,4 +12,8 @@ public class LabelCode extends IntermediateCode {
     public String toString() {
         return label;
     }
+
+    public String getLabel() {
+        return label;
+    }
 }
