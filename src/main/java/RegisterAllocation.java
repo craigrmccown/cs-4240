@@ -107,81 +107,10 @@ public class RegisterAllocation {
     }
 
     public void cfgConstruction(IRGenerator input) {
-        int size = input.getSize();
+        //ArrayList<IntermediateCode> cfgIR = new ArrayList<IntermediateCode>();
+        RegisterAllocation reg = new RegisterAllocation();
+        ArrayList<BasicBlock> arr = reg.getCFGConstruction(input);
         int opcode;
-        int startBlock = 0;
-        ArrayList<BasicBlock> arr = new ArrayList<BasicBlock>();
-        boolean prevBranchOrReturn = false;
-
-        //determining all the basic blocks
-        for(int i = 0; i<size; i++) {
-            opcode = input.getOpcode(i);
-
-            if(i!=0 && (prevBranchOrReturn || opcode==-1)) { //new leader statement
-                //creates a new basic block
-                prevBranchOrReturn = false;
-                arr.add(new BasicBlock(startBlock, i-1));
-
-                startBlock = i;
-            }
-
-            //reached the end of the intermediate code
-            if(i+1==size) {
-                arr.add(new BasicBlock(startBlock, i));
-            }
-
-            if(opcode >= IntermediateCode.GOTO && opcode <= IntermediateCode.RETURN) {
-                //statements after goto, branches and returns are the beginning
-                //of a basic block
-                prevBranchOrReturn = true;
-            }
-        }
-
-        //loading intermediate code into the basic blocks
-        for(int i = 0; i<arr.size(); i++) {
-            arr.get(i).setBlockCode(input.getSegment(arr.get(i).getStart(), arr.get(i).getEnd()));
-        }
-
-
-        //linking the basic blocks together for CFG
-        for(int i = 0; i<arr.size(); i++) {
-            LinkedList<IntermediateCode> code = arr.get(i).getBlockCode();
-
-            //looping through the block code
-            for(int j = 0; j<code.size(); j++) {
-                opcode = code.get(j).getOpcode();
-
-                if(opcode == IntermediateCode.GOTO) { //unconditional branch to another basic block
-                    //get the label that you're branching to
-                    String[] array = code.get(j).getParams();
-                    String label = array[0];
-
-                    for(int k = 0; k<arr.size(); k++) {
-                        if(arr.get(k).containsLabel(label)) { //branches to this block
-                            arr.get(i).addNext(arr.get(k));
-                            arr.get(k).addPrev(arr.get(i));
-                        }
-                    }
-                } else if(opcode >= IntermediateCode.BREQ && opcode <= IntermediateCode.BRGEQ) { //conditional branch to another block
-                    //get the label that you're branching to
-                    String[] array = code.get(j).getParams();
-                    String label = array[2];
-
-                    for(int k = 0; k<arr.size(); k++) {
-                        if(arr.get(k).containsLabel(label) && k!=i+1) { //conditionally branches to this block
-                            arr.get(i).addNext(arr.get(k));
-                            arr.get(k).addPrev(arr.get(i));
-                        }
-                    }
-
-                } 
-
-                if(j+1 == code.size() && i+1 != arr.size() && opcode != IntermediateCode.GOTO) { //not last basic block or unconditional branch
-                    arr.get(i).addNext(arr.get(i+1));
-                    arr.get(i+1).addPrev(arr.get(i));
-                }
-            }
-        }
 
         /*
         * Loops through the list of the basic blocks.
@@ -202,7 +131,7 @@ public class RegisterAllocation {
 
                 if(opcode == IntermediateCode.ASSIGN) {
                     storeVars.add(s[0]);
-                    if(!s[1].matches("^-?[0-9]*\\.?[0-9]+$")) {
+                    if(!s[1].matches("^-?[0-9]*\\.?[0-9]+$") && !storeVars.contains(s[1])) {
                         loadVars.add(s[1]);
                     }
                 } else if(opcode>=IntermediateCode.ADD && opcode<=IntermediateCode.OR) {
@@ -424,6 +353,89 @@ public class RegisterAllocation {
 
     public void ebbConstruction(IRGenerator input) {
         
+    }
+
+
+    public ArrayList<BasicBlock> getCFGConstruction(IRGenerator input) {
+
+        int size = input.getSize();
+        int opcode;
+        int startBlock = 0;
+        ArrayList<BasicBlock> arr = new ArrayList<BasicBlock>();
+        boolean prevBranchOrReturn = false;
+
+        //determining all the basic blocks
+        for(int i = 0; i<size; i++) {
+            opcode = input.getOpcode(i);
+
+            if(i!=0 && (prevBranchOrReturn || opcode==-1)) { //new leader statement
+                //creates a new basic block
+                prevBranchOrReturn = false;
+                arr.add(new BasicBlock(startBlock, i-1));
+
+                startBlock = i;
+            }
+
+            //reached the end of the intermediate code
+            if(i+1==size) {
+                arr.add(new BasicBlock(startBlock, i));
+            }
+
+            if(opcode >= IntermediateCode.GOTO && opcode <= IntermediateCode.RETURN) {
+                //statements after goto, branches and returns are the beginning
+                //of a basic block
+                prevBranchOrReturn = true;
+            }
+        }
+
+        //loading intermediate code into the basic blocks
+        for(int i = 0; i<arr.size(); i++) {
+            arr.get(i).setBlockCode(input.getSegment(arr.get(i).getStart(), arr.get(i).getEnd()));
+        }
+
+
+        //linking the basic blocks together for CFG
+        for(int i = 0; i<arr.size(); i++) {
+            LinkedList<IntermediateCode> code = arr.get(i).getBlockCode();
+
+            //looping through the block code
+            for(int j = 0; j<code.size(); j++) {
+                opcode = code.get(j).getOpcode();
+
+                if(opcode == IntermediateCode.GOTO) { //unconditional branch to another basic block
+                    //get the label that you're branching to
+                    String[] array = code.get(j).getParams();
+                    String label = array[0];
+
+                    for(int k = 0; k<arr.size(); k++) {
+                        if(arr.get(k).containsLabel(label)) { //branches to this block
+                            arr.get(i).addNext(arr.get(k));
+                            arr.get(k).addPrev(arr.get(i));
+                        }
+                    }
+                } else if(opcode >= IntermediateCode.BREQ && opcode <= IntermediateCode.BRGEQ) { //conditional branch to another block
+                    //get the label that you're branching to
+                    String[] array = code.get(j).getParams();
+                    String label = array[2];
+
+                    for(int k = 0; k<arr.size(); k++) {
+                        if(arr.get(k).containsLabel(label) && k!=i+1) { //conditionally branches to this block
+                            arr.get(i).addNext(arr.get(k));
+                            arr.get(k).addPrev(arr.get(i));
+                        }
+                    }
+
+                } 
+
+                if(j+1 == code.size() && i+1 != arr.size() && opcode != IntermediateCode.GOTO) { //not last basic block or unconditional branch
+                    arr.get(i).addNext(arr.get(i+1));
+                    arr.get(i+1).addPrev(arr.get(i));
+                }
+            }
+        }
+
+
+        return arr;
     }
 
 

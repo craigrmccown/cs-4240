@@ -26,7 +26,9 @@ public class Main {
             List<IntermediateCode> ir = semanticChecker.getGenerator().getIR();
             List<IntermediateCode> naiveIR = RegisterAllocation.naive(ir);
 
-            System.out.println(MIPSGenerator.generate(naiveIR));
+            //System.out.println(MIPSGenerator.generate(naiveIR));
+            RegisterAllocation reg = new RegisterAllocation();
+            reg.cfgConstruction(semanticChecker.getGenerator());
         } catch (IOException e) {
             System.out.println("failed to read input file");
             System.exit(1);
