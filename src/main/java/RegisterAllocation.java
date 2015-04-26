@@ -14,85 +14,96 @@ public class RegisterAllocation {
                 //either setting x = # or x = y
                 //so need to store x regardless and y is conditional load
                 // s[0] is left side of =, s[1] is right
-                if(!s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //not being set to a number
+                if(!isLiteral(s[1])) { //not being set to a number
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[1], ""));
                     naiveIR.add(new FourAddressCode(IntermediateCode.STR, "$t0", s[0], ""));
                 } else {
-                    naiveIR.add(new FourAddressCode(IntermediateCode.STR, s[1], s[0], ""));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.ADD, "$t0", "$zero", s[1]));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.STR, "$t0", s[0], ""));
                 }
             } else if(opcode>=IntermediateCode.ADD && opcode<=IntermediateCode.OR) {
                 // add, sub, mult, div, and, or
                 // s[0] is left operand, s[1] is right operand, s[2] is destination
-                if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$") && !s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //both vars
+                if(!isLiteral(s[0]) && !isLiteral(s[1])) { //both vars
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[0], ""));
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t1", s[1], ""));
                     naiveIR.add(new FourAddressCode(opcode, "$t0", "$t0", "$t1"));
-                } else if(s[0].matches("^-?[0-9]*\\.?[0-9]+$") && !s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //s[1] is a var
+                } else if(isLiteral(s[0]) && !isLiteral(s[1])) { //s[1] is a var
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[1], ""));
                     naiveIR.add(new FourAddressCode(opcode, "$t0", "$t0", s[0]));
-                } else if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$") && s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //s[0] is a var
+                } else if(!isLiteral(s[0]) && isLiteral(s[1])) { //s[0] is a var
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[0], ""));
                     naiveIR.add(new FourAddressCode(opcode, "$t0", "$t0", s[1]));
                 } else { // both #s
-                    naiveIR.add(new FourAddressCode(opcode, "$t0", s[0], s[1]));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.ADD, "$t0", "$zero", s[0]));
+                    naiveIR.add(new FourAddressCode(opcode, "$t0", "$t0", s[1]));
                 }
                 naiveIR.add(new FourAddressCode(IntermediateCode.STR, "$t0", s[2], ""));
             } else if(opcode >= IntermediateCode.BREQ && opcode <= IntermediateCode.BRGEQ) { //is a branch statement
                 //have a label in 3rd param and 
                 //1st 2 params can be numbers or vars
                 // s[0] is left operand, s[1] is right operand, s[2] is label
-                if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$") && !s[1].matches("^-?[0-9]*\\.?[0-9]+$")) {//both vars
+                if (!isLiteral(s[0]) && !isLiteral(s[1])) {//both vars
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[0], ""));
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t1", s[1], ""));
                     naiveIR.add(new FourAddressCode(opcode, "$t0", "$t1", s[2]));
-                } else if(s[0].matches("^-?[0-9]*\\.?[0-9]+$") && !s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //s[1] is a var
+                } else if (isLiteral(s[0]) && !isLiteral(s[1])) { //s[1] is a var
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[1], ""));
                     naiveIR.add(new FourAddressCode(opcode, s[0], "$t0", s[2]));
-                } else if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$") && s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //s[0] is a var
+                } else if (!isLiteral(s[0]) && isLiteral(s[1])) { //s[0] is a var
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[0], ""));
                     naiveIR.add(new FourAddressCode(opcode, "$t0", s[1], s[2]));
                 } else {
-                    naiveIR.add(new FourAddressCode(opcode, s[0], s[1], s[2]));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.ADD, "$t0", "$zero", s[0]));
+                    naiveIR.add(new FourAddressCode(opcode, "$t0", s[1], s[2]));
                 }
+            } else if (opcode == IntermediateCode.GOTO) {
+                naiveIR.add(new FourAddressCode(IntermediateCode.GOTO, s[0], "", ""));
             } else if(opcode == IntermediateCode.RETURN) {
                 // omitting return
             } else if(opcode == IntermediateCode.CALL || opcode == IntermediateCode.CALLR) { //method call
                 // omitting call and callr
             } else if(opcode == IntermediateCode.ARRAY_STORE) {
-                // s[0] is array var, s[1] is index, s[2] is value
+                // s[0] is register|array var, s[1] is index, s[2] is value
                 // using '|' character as hack to include more than 3 params
-                if(!s[1].matches("^-?[0-9]*\\.?[0-9]+$") && !s[2].matches("^-?[0-9]*\\.?[0-9]+$")) { //both vars
+                if(!isLiteral(s[1]) && !isLiteral(s[2])) { //both vars
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t1", s[1], ""));
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t2", s[2], ""));
-                    naiveIR.add(new FourAddressCode(IntermediateCode.ARRAY_STORE, "$t0|" + s[0], "$t1", "$t2"));
-                } else if (s[1].matches("^-?[0-9]*\\.?[0-9]+$") && !s[2].matches("^-?[0-9]*\\.?[0-9]+$")) { //s[2] is a var
-                    naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t1", s[2], ""));
-                    naiveIR.add(new FourAddressCode(IntermediateCode.ARRAY_STORE, "$t0|" + s[0], s[1], "$t1"));
-                } else if (!s[1].matches("^-?[0-9]*\\.?[0-9]+$") && s[2].matches("^-?[0-9]*\\.?[0-9]+$")) { //s[1] is a var
+                } else if (isLiteral(s[1]) && !isLiteral(s[2])) { //s[2] is a var
+                    naiveIR.add(new FourAddressCode(IntermediateCode.ADD, "$t1", "$zero", s[1]));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t2", s[2], ""));
+                } else if (!isLiteral(s[1]) && isLiteral(s[2])) { //s[1] is a var
                     naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t1", s[1], ""));
-                    naiveIR.add(new FourAddressCode(IntermediateCode.ARRAY_STORE, "$t0|" + s[0], "$t1", s[2]));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.ADD, "$t2", "$zero", s[2]));
                 } else {// both #s
-                    naiveIR.add(new FourAddressCode(IntermediateCode.ARRAY_STORE, "$t0|" + s[0], s[1], s[2]));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.ADD, "$t1", "$zero", s[1]));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.ADD, "$t2", "$zero", s[2]));
                 }
+                naiveIR.add(new FourAddressCode(IntermediateCode.ARRAY_STORE, "$t0|" + s[0], "$t1", "$t2"));
             } else if(opcode == IntermediateCode.ARRAY_LOAD) {
                 // s[0] is destination var, s[1] is array var, s[2] is index
-                if(!s[2].matches("^-?[0-9]*\\.?[0-9]+$")) { // s[2] is a var
-                    naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[2], ""));
-                    naiveIR.add(new FourAddressCode(IntermediateCode.ARRAY_LOAD, s[0], s[1], "$t0"));
-                } else {
-                    naiveIR.add(new FourAddressCode(IntermediateCode.ARRAY_LOAD, s[0], s[1], s[2]));
+                if(!isLiteral(s[2])) { // s[2] is a var
+                    naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t1", s[2], ""));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.ARRAY_LOAD, "$t0", s[1], "$t1"));
+                } else { // s[2] is a #
+                    naiveIR.add(new FourAddressCode(IntermediateCode.ARRAY_LOAD, "$t0", s[1], s[2]));
                 }
+                naiveIR.add(new FourAddressCode(IntermediateCode.STR, "$t0", s[0], ""));
             } else if(opcode == IntermediateCode.ARRAY_ASSIGN) {
                 // s[0] is array var, s[1] is array size, s[2] is initial value
                 naiveIR.add(new FourAddressCode(IntermediateCode.ARRAY_ASSIGN, s[0], s[1], s[2]));
-            } else if(opcode!=-1 && opcode!=7) {
-                //opcode==7 is goto which doesn't need any loads/stores
-                //opcode==-1 is a label which doesn't need any loads/stores
+            } else if(ir.get(i) instanceof  LabelCode) {
+                naiveIR.add(new LabelCode(ir.get(i).getLabel()));
+            } else {
                 System.out.println("Something went wrong! Opcode: "+opcode);
             }
         }
 
         return naiveIR;
+    }
+
+    public static boolean isLiteral(String varOrLit) {
+        return varOrLit.matches("^-?[0-9]*\\.?[0-9]+$");
     }
 
     public void cfgConstruction(IRGenerator input) {

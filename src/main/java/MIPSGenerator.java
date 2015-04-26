@@ -1,12 +1,11 @@
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 
 public class MIPSGenerator {
-    static HashSet<String> memLocations = new HashSet<String>();
+    static HashMap<String, String> data = new HashMap<String, String>();
 
     // TODO handle floating point
-    // TODO array functionality
-    // TODO add boilerplate MIPS code before and after
+    // TODO syscalls
     static String generate(List<IntermediateCode> ir) {
         String dataBlock, textBlock;
         dataBlock = textBlock = "";
@@ -17,81 +16,93 @@ public class MIPSGenerator {
 
             switch (instruction.getOpcode()) {
                 case IntermediateCode.ASSIGN:
-                    textBlock += "add " + params[0] + " " + params[1] + " 0\n";
+                    // params[0] is destination register, params[1] is source register
+                    textBlock += "add " + params[0] + ", " + params[1] + " 0\n";
                     break;
                 case IntermediateCode.ADD:
-                    textBlock += "add " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is destination register, params[1] is source register, params[2] is source register or immediate value
+                    textBlock += "add " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.SUB:
-                    textBlock += "sub " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is destination register, params[1] is source register, params[2] is source register or immediate value
+                    textBlock += "sub " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.MULT:
-                    textBlock += "mul " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is destination register, params[1] is source register, params[2] is source register or immediate value
+                    textBlock += "mul " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.DIV:
-                    textBlock += "div " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is destination register, params[1] is source register, params[2] is source register or immediate value
+                    textBlock += "div " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.AND:
-                    textBlock += "and " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is destination register, params[1] is source register, params[2] is source register or immediate value
+                    textBlock += "and " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.OR:
-                    textBlock += "or " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is destination register, params[1] is source register, params[2] is source register or immediate value
+                    textBlock += "or " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.GOTO:
+                    // params[0] is goto label
                     textBlock += "b " + params[0] + "\n";
                     break;
                 case IntermediateCode.BREQ:
-                    textBlock += "beq " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is left operand register, params[1] is right operand (register or immediate value), params[2] branch label
+                    textBlock += "beq " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.BRNEQ:
-                    textBlock += "bne " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is left operand register, params[1] is right operand (register or immediate value), params[2] branch label
+                    textBlock += "bne " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.BRLT:
-                    textBlock += "blt " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is left operand register, params[1] is right operand (register or immediate value), params[2] branch label
+                    textBlock += "blt " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.BRGT:
-                    textBlock += "bgt " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is left operand register, params[1] is right operand (register or immediate value), params[2] branch label
+                    textBlock += "bgt " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.BRLEQ:
-                    textBlock += "ble " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is left operand register, params[1] is right operand (register or immediate value), params[2] branch label
+                    textBlock += "ble " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.BRGEQ:
-                    textBlock += "bge " + params[0] + " " + params[1] + " " + params[2] + "\n";
+                    // params[0] is left operand register, params[1] is right operand (register or immediate value), params[2] branch label
+                    textBlock += "bge " + params[0] + ", " + params[1] + ", " + params[2] + "\n";
                     break;
                 case IntermediateCode.RETURN:
-                    // skipping return, not implementing function calls"
+                    // skipping return, not implementing function calls
                     break;
                 case IntermediateCode.CALL:
-                    // skipping call, not implementing function calls"
+                    // skipping call, not implementing function calls
                     break;
                 case IntermediateCode.CALLR:
-                    // skipping callr, not implementing function calls"
+                    // skipping callr, not implementing function calls
                     break;
                 case IntermediateCode.ARRAY_STORE:
-                    String[] splitParam = params[0].split("\\|");
-                    textBlock += "la " + splitParam[0] + " " + splitParam[1] + "\n";
-                    textBlock += "add " + splitParam[0] + " " + splitParam[0] + " " + params[1] + "\n";
-                    textBlock += "sw " + splitParam[0] + " " + params[2] + "\n";
+                    // params[0] is register to use|array var, params[1] is index (register or immediate value), params[2] is the register holding the value to store
+                    String[] splitArrStoreParam = params[0].split("\\|");
+                    textBlock += "la " + splitArrStoreParam[0] + ", " + splitArrStoreParam[1] + "\n";
+                    textBlock += "add " + splitArrStoreParam[0] + ", " + splitArrStoreParam[0] + ", " + params[1] + "\n";
+                    textBlock += "sw " + params[2] + " 0(" + splitArrStoreParam[0] + ")\n";
                     break;
                 case IntermediateCode.ARRAY_LOAD:
-                    textBlock += "la " + params[0] + " " + params[1] + "\n";
-                    textBlock += "add " + params[0] + " " + params[0] + " " + params[2] + "\n";
-                    textBlock += "lw " + params[0] + " " + params[0] + "\n";
+                    // params[0] is register to use, params[1] is array var, params[2] is index
+                    textBlock += "la " + params[0] + ", " + params[1] + "\n";
+                    textBlock += "add " + params[0] + ", " + params[0] + ", " + params[2] + "\n";
+                    textBlock += "lw " + params[0] + " 0(" + params[0] + ")\n";
                     break;
                 case IntermediateCode.ARRAY_ASSIGN:
                     int size = Integer.parseInt(params[1]);
-                    dataBlock += params[0] + ": .space " + (size * 4) + "\n";
-                    memLocations.add(params[0]);
+                    data.put(params[0], ".space " + (size * 4));
                     break;
                 case IntermediateCode.LDR:
-                    textBlock += "lw " + params[0] + " " + params[1] + "\n";
+                    textBlock += "lw " + params[0] + ", " + params[1] + "\n";
                     break;
                 case IntermediateCode.STR:
-                    if (!memLocations.contains(params[1])) {
-                        memLocations.add(params[1]);
-                    }
-
-                    textBlock += "sw " + params[0] + " " + params[1] + "\n";
+                    data.put(params[1], ".word 0");
+                    textBlock += "sw " + params[0] + ", " + params[1] + "\n";
                     break;
                 default:
                     LabelCode lc = (LabelCode)instruction;
@@ -100,10 +111,10 @@ public class MIPSGenerator {
             }
         }
 
-        for (String word : memLocations) {
-            dataBlock += word + ": .word \n";
+        for (String var : data.keySet()) {
+            dataBlock += var + ": " + data.get(var) + "\n";
         }
 
-        return ".text\n" + textBlock + "\n.data\n" + dataBlock;
+        return ".data\n" + dataBlock + "\n.text\n" + textBlock + "jr $ra";
     }
 }

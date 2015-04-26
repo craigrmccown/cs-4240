@@ -22,9 +22,6 @@ public class Main {
 
             SemanticChecker semanticChecker = new SemanticChecker();
             semanticChecker.check(tree);
-            System.out.println(semanticChecker.getGenerator());
-
-            System.out.println(semanticChecker.getSymbolTable());
 
             List<IntermediateCode> ir = semanticChecker.getGenerator().getIR();
             List<IntermediateCode> naiveIR = RegisterAllocation.naive(ir);
