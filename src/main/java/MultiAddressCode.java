@@ -16,7 +16,7 @@ public class MultiAddressCode extends IntermediateCode {
         NUMPARAMS = params.length;
     }
 
-    public MultiAddressCode(int opcode, String functionName, String retAddress, String[] params) {
+    public MultiAddressCode(int opcode, String retAddress, String functionName, String[] params) {
         this.opcode = opcode;
         this.functionName = functionName;
         this.retAddress = retAddress;
@@ -56,6 +56,8 @@ public class MultiAddressCode extends IntermediateCode {
     public int getOpcode() {
         return opcode;
     }
+
+    public String getFunctionName() { return functionName; }
 
     public String toString() {
         String prefix = IntermediateCode.opString(opcode) + ", " + functionName;
