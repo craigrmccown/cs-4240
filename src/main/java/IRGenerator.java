@@ -1,4 +1,5 @@
 import java.util.LinkedList;
+import java.util.List;
 
 public class IRGenerator {
 
@@ -37,6 +38,10 @@ public class IRGenerator {
         String ret = "t" + tempCount;
         tempCount++;
         return ret;
+    }
+
+    public List<IntermediateCode> getIR() {
+        return operations;
     }
 
     /**
