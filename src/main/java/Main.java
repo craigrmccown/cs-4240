@@ -2,6 +2,7 @@ import org.antlr.runtime.*;
 import org.antlr.runtime.tree.BaseTree;
 
 import java.io.IOException;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
@@ -24,14 +25,11 @@ public class Main {
             System.out.println(semanticChecker.getGenerator());
 
             System.out.println(semanticChecker.getSymbolTable());
-            
-            RegisterAllocation reg = new RegisterAllocation();
-            reg.naive(semanticChecker.getGenerator());
 
-            System.out.println(semanticChecker.getGenerator());
-            System.out.println();
+            List<IntermediateCode> ir = semanticChecker.getGenerator().getIR();
+            List<IntermediateCode> naiveIR = RegisterAllocation.naive(ir);
 
-            MIPSGenerator.generate(semanticChecker.getGenerator().getIR());
+            System.out.println(MIPSGenerator.generate(naiveIR));
         } catch (IOException e) {
             System.out.println("failed to read input file");
             System.exit(1);
