@@ -1,0 +1,21 @@
+void main() begin
+  begin
+    var i, x : int := 4;
+
+    while (x <> 10) do
+      x := x + 1;
+      break;
+    enddo;
+    x := 10;
+
+    for i := 0 to 5 do
+      if (x = 5)
+      then
+          break;
+      else
+          x := x - 1;
+      endif;
+    enddo;
+    x := 5;
+  end;
+end;

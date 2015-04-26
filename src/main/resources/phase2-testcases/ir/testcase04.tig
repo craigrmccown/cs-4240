@@ -1,0 +1,10 @@
+void main() begin
+  begin
+    var x : int := 4;
+
+    while (x <> 10) do
+      x := x + 1;
+    enddo;
+    x := 10;
+  end;
+end;

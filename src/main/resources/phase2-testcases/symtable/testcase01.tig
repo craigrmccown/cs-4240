@@ -1,0 +1,24 @@
+type integer = int;
+
+int function foo(num : integer) begin
+  begin
+      /* definition override */
+      var num : int := 5;
+      return 5;
+  end;
+end;
+
+void main() begin
+  begin
+    var x : int := 4;
+    var y : integer := 5;
+
+    x := x + 1;
+    x := foo(y);
+    begin
+        /* definition override */
+        var x : integer := 5;
+        x := x + y;
+    end;
+  end;
+end;

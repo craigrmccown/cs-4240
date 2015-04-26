@@ -1,0 +1,26 @@
+type integer = int;
+
+int function foo(num : integer) begin
+  begin
+      var num : integer := 5;
+      /* return type mismatch */
+      return num;
+  end;
+end;
+
+void main() begin
+  begin
+    var x : int := 4;
+    var y : integer := 5;
+    /* undeclared type */
+    var z : floatpt := 1.0;
+
+    x := x + 1;
+    /* type mismatch */
+    x := foo(x);
+    begin
+        var x : integer := 5;
+        x := x + y;
+    end;
+  end;
+end;
