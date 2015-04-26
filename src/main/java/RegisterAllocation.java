@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+import java.util.*;
 
 public class RegisterAllocation {
 
@@ -128,9 +128,8 @@ public class RegisterAllocation {
         int size = input.getSize();
         int opcode;
         int startBlock = 0;
-        ArrayList<Block> arr = new ArrayList<Block>();
+        ArrayList<BasicBlock> arr = new ArrayList<BasicBlock>();
         boolean prevBranchOrReturn = false;
-        int called = 0;
 
         //determining all the basic blocks
         for(int i = 0; i<size; i++) {
@@ -139,33 +138,85 @@ public class RegisterAllocation {
             if(i!=0 && (prevBranchOrReturn || opcode==-1)) { //new leader statement
                 //creates a new basic block
                 prevBranchOrReturn = false;
-                arr.add(new Block(startBlock, i-1));
+                arr.add(new BasicBlock(startBlock, i-1));
 
                 startBlock = i;
             }
 
             //reached the end of the intermediate code
             if(i+1==size) {
-                arr.add(new Block(startBlock, i));
+                arr.add(new BasicBlock(startBlock, i));
             }
 
             if(opcode >= IntermediateCode.GOTO && opcode <= IntermediateCode.RETURN) {
                 //statements after goto, branches and returns are the beginning
                 //of a basic block
-                called++;
                 prevBranchOrReturn = true;
             }
         }
 
-        System.out.println("Called: "+called);
+        //loading intermediate code into the basic blocks
         for(int i = 0; i<arr.size(); i++) {
-            System.out.println("Block " + i + ":");
-            System.out.println("    Start: "+ arr.get(i).getStart());
-            System.out.println("    End: " + arr.get(i).getEnd());
-            for(int j = arr.get(i).getStart(); j<=arr.get(i).getEnd(); j++) {
-                System.out.println("        "+input.toString(j));
+            arr.get(i).setBlockCode(input.getSegment(arr.get(i).getStart(), arr.get(i).getEnd()));
+        }
+
+
+        //linking the basic blocks together for CFG
+        for(int i = 0; i<arr.size(); i++) {
+            LinkedList<IntermediateCode> code = arr.get(i).getBlockCode();
+
+            //looping through the block code
+            for(int j = 0; j<code.size(); j++) {
+                opcode = code.get(j).getOpcode();
+
+                if(opcode == IntermediateCode.GOTO) { //unconditional branch to another basic block
+                    //get the label that you're branching to
+                    String[] array = code.get(j).getParams();
+                    String label = array[0];
+
+                    for(int k = 0; k<arr.size(); k++) {
+                        if(arr.get(k).containsLabel(label)) { //branches to this block
+                            arr.get(i).addNext(arr.get(k));
+                            arr.get(k).addPrev(arr.get(i));
+                        }
+                    }
+                } else if(opcode >= IntermediateCode.BREQ && opcode <= IntermediateCode.BRGEQ) { //conditional branch to another block
+                    //get the label that you're branching to
+                    String[] array = code.get(j).getParams();
+                    String label = array[2];
+
+                    for(int k = 0; k<arr.size(); k++) {
+                        if(arr.get(k).containsLabel(label) && k!=i+1) { //conditionally branches to this block
+                            arr.get(i).addNext(arr.get(k));
+                            arr.get(k).addPrev(arr.get(i));
+                        }
+                    }
+
+                } 
+
+                if(j+1 == code.size() && i+1 != arr.size() && opcode != IntermediateCode.GOTO) { //not last basic block or unconditional branch
+                    arr.get(i).addNext(arr.get(i+1));
+                    arr.get(i+1).addPrev(arr.get(i));
+                }
             }
         }
+        
+        for(int i = 0; i<arr.size(); i++) {
+            System.out.println("Basic Block " + i + ":");
+            System.out.println("    Start: "+ arr.get(i).getStart());
+            System.out.println("    End: " + arr.get(i).getEnd());
+            LinkedList<IntermediateCode> list = arr.get(i).getBlockCode();
+            for(int j = 0; j<list.size(); j++) {
+                System.out.println("        "+ list.get(j).toString());
+            }
+            
+            ArrayList<BasicBlock> arrlist = arr.get(i).getNextBlocks();
+            for(int k = 0; k<arrlist.size(); k++) {
+                System.out.println("            Start: " + arrlist.get(k).getStart());
+                System.out.println("            End: "+ arrlist.get(k).getEnd());
+            }
+        }
+
 
         //return input;
     }
@@ -174,19 +225,34 @@ public class RegisterAllocation {
         
     }
 
-/*
+
     private class BasicBlock {
-        private IRGenerator block;
+        private LinkedList<IntermediateCode> block;
         private ArrayList<BasicBlock> nextBlocks;
         private ArrayList<BasicBlock> prevBlocks;
+        int start;
+        int end;
 
-        public BasicBlock(IRGenerator block) {
+        public BasicBlock(int start, int end, LinkedList<IntermediateCode> block) {
+            this.start = start;
+            this.end = end;
             this.block = block;
             nextBlocks = new ArrayList<BasicBlock>();
             prevBlocks = new ArrayList<BasicBlock>();
         }
 
-        public IRGenerator getBlockCode() {
+        public BasicBlock(int start, int end) {
+            this.start = start;
+            this.end = end;
+            nextBlocks = new ArrayList<BasicBlock>();
+            prevBlocks = new ArrayList<BasicBlock>();
+        }
+
+        public void setBlockCode(LinkedList<IntermediateCode> blockCode) {
+            block = blockCode;
+        }
+
+        public LinkedList<IntermediateCode> getBlockCode() {
             return block;
         }
 
@@ -196,6 +262,25 @@ public class RegisterAllocation {
 
         public void addPrev(BasicBlock prev) {
             prevBlocks.add(prev);
+        }
+
+        public int getStart() {
+            return start;
+        }
+
+        public int getEnd() {
+            return end;
+        }
+
+        public boolean containsLabel(String label) {
+            for(int i = 0; i<block.size(); i++) {
+                if(block.get(i).getOpcode()==-1) {
+                    if(block.get(i).getLabel()==label) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         public ArrayList<BasicBlock> getNextBlocks() {
@@ -212,9 +297,9 @@ public class RegisterAllocation {
             allBlocks.addAll(prevBlocks);
             return allBlocks;
         }
-    }*/
+    }
 
-    private class Block {
+    /*private class Block {
         private int start;
         private int end;
 
@@ -230,5 +315,5 @@ public class RegisterAllocation {
         public int getEnd() {
             return end;
         }
-    }
+    }*/
 }

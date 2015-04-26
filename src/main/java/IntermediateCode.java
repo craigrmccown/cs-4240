@@ -75,6 +75,10 @@ public abstract class IntermediateCode {
     public String getRetAddress() {
         return "";
     }
+    
+    public String getLabel() {
+        return "";
+    }
 
     public void changeRetAddress(String retAddress) {
         
