@@ -26,6 +26,32 @@ public class Scope {
         this.parent = parent;
     }
 
+    public void flatten(Map<String, Symbol> flattened) {
+        for (int i = 0; i < children.size(); i ++) {
+            children.get(i).flatten(flattened);
+        }
+
+        for (String key : symbols.keySet()) {
+            String globalName = "";
+            Symbol current = symbols.get(key);
+
+            if (current.getSymbolType() == Symbol.FUNCTIONTYPE) {
+                globalName += "func_";
+            }
+
+            globalName += key + "__" + scopeId;
+
+            Scope dataTypeScope = lookupScopeUnsafe(current.getDataType());
+
+            if (dataTypeScope != null) {
+                Symbol dataTypeSymbol = dataTypeScope.getSymbol(current.getDataType());
+                symbols.get(key).setDataType(dataTypeSymbol.getName() + "__" + dataTypeScope.getScopeId());
+            }
+
+            flattened.put(globalName, symbols.get(key));
+        }
+    }
+
     public int getScopeId() { return scopeId; }
 
     public void addChildScope(Scope child) { this.children.add(child); }

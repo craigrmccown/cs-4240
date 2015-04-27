@@ -1,12 +1,18 @@
+type Pair = array[2] of int;
+
 void main() begin
   begin
-    var x : int := 4;
-
-    if (x > 5) then
-      begin
-        var x : fixedpt := 5.0;
-        x := x - 2;
-      end;
-    endif;
+    var j : fixedpt := 10;
+    var i : int := 0;
+    var arr : Pair;
+    j := i + j;
+    arr[0] := 9;
+    printi(arr[0]);
+    arr[1] := 30;
+    printi(arr[1]);
+    arr[2] := 60;
+    printi(arr[2]);
+    arr[3] := 100;
+    printi(arr[3]);
   end;
 end;
