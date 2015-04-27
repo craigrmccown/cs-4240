@@ -6,10 +6,6 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        if (args.length != 1) {
-            System.out.println("No file selected or too many arguments");
-            System.exit(0);
-        }
         try {
             CharStream cs = new ANTLRFileStream("target/classes/" + args[0]);
             TigerLexer lexer = new TigerLexer(cs);
@@ -24,8 +20,17 @@ public class Main {
             semanticChecker.check(tree);
 
             List<IntermediateCode> ir = semanticChecker.getGenerator().getIR();
-            List<IntermediateCode> naiveIR = RegisterAllocation.naive(ir);
-            System.out.println(MIPSGenerator.generate(naiveIR));
+
+            if (args[1].equals("naive")) {
+                List<IntermediateCode> naiveIR = RegisterAllocation.naive(ir);
+                System.out.println(MIPSGenerator.generate(naiveIR));
+            } else if (args[1].equals("cfg")) {
+
+            } else if (args[1].equals("ebb")) {
+
+            } else {
+                System.out.println("Please pass one of these three options as the second argument: 'naive', 'cfg', 'ebb'");
+            }
 
         } catch (IOException e) {
             System.out.println("failed to read input file");
