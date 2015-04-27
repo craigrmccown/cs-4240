@@ -105,13 +105,13 @@ public class MIPSGenerator {
                     break;
                 case IntermediateCode.ARRAY_ASSIGN:
                     int size = Integer.parseInt(params[1]);
-                    data.put(params[0], ".space " + (size * 4));
+                    data.put(params[0], ".space " + size * 4);
                     break;
                 case IntermediateCode.LDR:
                     textBlock += "lw " + params[0] + ", " + params[1] + "\n";
                     break;
                 case IntermediateCode.STR:
-                    data.put(params[1], ".word 0");
+                    data.put(params[1], ".space 4");
                     textBlock += "sw " + params[0] + ", " + params[1] + "\n";
                     break;
                 default:

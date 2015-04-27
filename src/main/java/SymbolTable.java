@@ -1,6 +1,8 @@
 import org.antlr.runtime.tree.BaseTree;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SymbolTable {
     private Scope rootScope;
@@ -119,6 +121,12 @@ public class SymbolTable {
             functionTree.getChild(1).toString(),
             new Symbol(functionTree.getChild(1).toString(), functionTree.getChild(0).toString(), params)
         );
+    }
+
+    public Map<String, Symbol> flatten() {
+        HashMap<String, Symbol> flattened = new HashMap<String, Symbol>();
+        rootScope.flatten(flattened);
+        return flattened;
     }
 
     public String toString() {
