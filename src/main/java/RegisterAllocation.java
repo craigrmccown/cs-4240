@@ -1,8 +1,4 @@
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class RegisterAllocation {
     private static final int NUM_INT_REGISTERS = 27;
@@ -415,7 +411,7 @@ public class RegisterAllocation {
         //return input;
     }
 
-    public void ebbConstruction(IRGenerator input) {
+    public List<BasicBlock> ebbConstruction(IRGenerator input) {
         ArrayList<BasicBlock> bb = getCFGConstruction(input);
         BasicBlock x;
         EbbRoots.add(bb.get(0));
@@ -628,6 +624,62 @@ public class RegisterAllocation {
             }
         }
         return count;
+    }
+
+    public List<IntermediateCode> getIRfromEbb(IRGenerator input) {
+        List<BasicBlock> bb = ebbConstruction(input);
+        for (EbbTuple tuple : AllEbbs) {
+            HashSet<String> loadMap = new HashSet<String>();
+            HashSet<String> loadStoreMap = new HashSet<String>();
+            HashSet<String> storeMap = new HashSet<String>();
+
+            for (BasicBlock block : tuple.blocks) {
+                for (String varName: block.loadVars) {
+                    loadMap.add(varName);
+                }
+                for (String varName: block.loadStoreVars) {
+                    loadStoreMap.add(varName);
+                }
+                for (String varName: block.storeVars) {
+                    storeMap.add(varName);
+                }
+            }
+            int count = 0;
+            for (String s : loadMap) {
+                if(tuple.root.getBlockCode().get(0).getOpcode() == -1)
+                    tuple.root.addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(count), s, ""));
+                else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(count), s, ""));
+            }
+            for (String s : loadStoreMap) {
+                if(tuple.root.getBlockCode().get(0).getOpcode() == -1)
+                    tuple.root.addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(count), s, ""));
+                else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(count), s, ""));
+            }
+
+            for (BasicBlock block : tuple.blocks) {
+                boolean finalBlock = false;
+                for (BasicBlock next : block.getNextBlocks()) {
+                    if (!tuple.blocks.contains(next)) {
+                        finalBlock = true;
+                    }
+                }
+                if (finalBlock) {
+                    for (String s : storeMap) {
+                        if(tuple.root.getBlockCode().get(0).getOpcode() == -1)
+                            tuple.root.addCode(1, new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(count), s, ""));
+                        else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(count), s, ""));
+                    }
+                    for (String s : loadStoreMap) {
+                        if(tuple.root.getBlockCode().get(0).getOpcode() == -1)
+                            tuple.root.addCode(1, new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(count), s, ""));
+                        else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(count), s, ""));
+                    }
+                }
+            }
+        }
+        for (BasicBlock block : bb) {
+            
+        }
     }
 
 
