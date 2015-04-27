@@ -2,12 +2,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-
-private final int NUM_INT_REGISTERS = 27;
-private final int NUM_FP_REGISTERS = 15;
+import java.util.Map;\
 
 public class RegisterAllocation {
+    private final int NUM_INT_REGISTERS = 27;
+    private final int NUM_FP_REGISTERS = 15;
     //don't judge
     private class EbbTuple {
         public BasicBlock root;
@@ -365,51 +364,43 @@ public class RegisterAllocation {
 
                 for(int j = 0; j<loadVars.size(); j++) {
                     orig = loadVars.get(j);
-                    arr.get(i).replaceVariable(orig, "lv$"+num);
+                    arr.get(i).replaceVariable(orig, getNextIntegerRegister(num);
                     if(labelStarted) {
-                        arr.get(i).addCode(1, new FourAddressCode(IntermediateCode.LDR, "lv$"+num, orig, ""));
+                        arr.get(i).addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num), orig, ""));
                     } else {
-                        arr.get(i).addCode(0, new FourAddressCode(IntermediateCode.LDR, "lv$"+num, orig, ""));
+                        arr.get(i).addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num, orig, ""));
                     }
 
-                    if(num==25) {
-                        num=28;
-                    } else {
-                        num++;
-                    }
+                    num++;
                 }
 
                 for(int j = 0; j<loadStoreVars.size(); j++) {
                     orig = loadStoreVars.get(j);
-                    arr.get(i).replaceVariable(orig, "lsv$"+num);
+                    arr.get(i).replaceVariable(orig, getNextIntegerRegister(num);
                     if(labelStarted) {
-                        arr.get(i).addCode(1, new FourAddressCode(IntermediateCode.LDR, "lsv$"+num, orig, ""));
+                        arr.get(i).addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num, orig, ""));
                     } else {
-                        arr.get(i).addCode(0, new FourAddressCode(IntermediateCode.LDR, "lsv$"+num, orig, ""));
+                        arr.get(i).addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num, orig, ""));
                     }
 
 
                     if(branchEnded) {
-                        arr.get(i).addCode(code.size()-1, new FourAddressCode(IntermediateCode.STR, "lsv$"+num, orig, ""));
+                        arr.get(i).addCode(code.size()-1, new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(num), orig, ""));
                     } else {
-                        arr.get(i).addCode(new FourAddressCode(IntermediateCode.STR, "lsv$"+num, orig, ""));
+                        arr.get(i).addCode(new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(num), orig, ""));
                     }
 
-                    if(num==25) {
-                        num=28;
-                    } else {
-                        num++;
-                    }
+                    num++;
                 }
 
                 for(int j = 0; j<storeVars.size(); j++) {
                     orig = storeVars.get(j);
-                    arr.get(i).replaceVariable(orig, "sv$"+num);
+                    arr.get(i).replaceVariable(orig, getNextIntegerRegister(num));
 
                     if(branchEnded) {
-                        arr.get(i).addCode(code.size()-1, new FourAddressCode(IntermediateCode.STR, "sv$"+num, orig, ""));
+                        arr.get(i).addCode(code.size()-1, new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(num), orig, ""));
                     } else {
-                        arr.get(i).addCode(new FourAddressCode(IntermediateCode.STR, "sv$"+num, orig, ""));
+                        arr.get(i).addCode(new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(num), orig, ""));
                     }
 
                     if(num==25) {
@@ -620,6 +611,46 @@ public class RegisterAllocation {
         return array[numUsed];
     }
 
+    public int getSpillCost(BasicBlock block, String variable) {
+        LinkedList<IntermediateCode> code = block.getBlockCode();
+        int count = 0;
+        for(int i = 0; i<code.size(); i++) {
+            int opcode = code.get(i).getOpcode();
+            String[] s = code.get(i).getParams();
+            if(opcode == IntermediateCode.ASSIGN && (s[0].equals(variable) || s[1].equals(variable))) {
+                count++;
+            } else if(opcode >= IntermediateCode.BREQ && opcode <= IntermediateCode.BRGEQ && (s[0].equals(variable) || s[1].equals(variable))) {
+                count++;
+            } else if(opcode>=IntermediateCode.ADD && opcode<=IntermediateCode.OR &&) {
+                if((s[0].equals(variable) || s[1].equals(variable))) {
+                    count++;
+                }
+                if(s[2].equals(variable)) {
+                    count++;
+                }
+            } else if(opcode==IntermediateCode.RETURN && s.length > 0 && s[0].equals(variable)) {
+                count++;
+            } else if(opcode == IntermediateCode.ARRAY_LOAD) {
+                if(variable.equals(s[0])) {
+                    count++;
+                } 
+                if(variable.equals(s[2])) {
+                    count++;
+                }
+            } else if(opcode == IntermediateCode.ARRAY_STORE) {
+                if(variable.equals(s[1]) || variable.equals(s[2])) {
+                    count++;
+                }
+            } else if(opcode == IntermediateCode.CALLR) {
+                count++;
+            } else if(opcode == IntermediateCode.CALL) {
+                if(s[0].equals(variable)) {
+                    count++;
+                }
+            }
+        }
+    }
+
 
     public class BasicBlock {
         private LinkedList<IntermediateCode> block;
@@ -627,6 +658,9 @@ public class RegisterAllocation {
         private ArrayList<BasicBlock> prevBlocks;
         int start;
         int end;
+        private ArrayList<String> loadVars;
+        private ArrayList<String> storeVars;
+        private ArrayList<String> loadStoreVars;
 
         public BasicBlock(int start, int end, LinkedList<IntermediateCode> block) {
             this.start = start;
@@ -710,6 +744,18 @@ public class RegisterAllocation {
             allBlocks.addAll(nextBlocks);
             allBlocks.addAll(prevBlocks);
             return allBlocks;
+        }
+
+        public ArrayList<String> setLoadVars(ArrayList<String> loadVars) {
+            this.loadVars = loadVars;
+        }
+
+        public ArrayList<String> setLoadVars(ArrayList<String> storeVars) {
+            this.storeVars = storeVars;
+        }
+
+        public ArrayList<String> setLoadVars(ArrayList<String> loadStoreVars) {
+            this.loadStoreVars = loadStoreVars;
         }
     }
 }
