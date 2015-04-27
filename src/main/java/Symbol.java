@@ -50,8 +50,6 @@ public class Symbol {
         this.symbolType = FUNCTIONTYPE;
     }
 
-    public void setDataType(String dataType) { this.dataType = dataType; }
-
     public String getName() { return name; }
 
     public String getDataType() { return dataType; }

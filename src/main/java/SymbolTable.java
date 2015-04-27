@@ -123,12 +123,6 @@ public class SymbolTable {
         );
     }
 
-    public Map<String, Symbol> flatten() {
-        HashMap<String, Symbol> flattened = new HashMap<String, Symbol>();
-        rootScope.flatten(flattened);
-        return flattened;
-    }
-
     public String toString() {
         return toString(rootScope, 0);
     }

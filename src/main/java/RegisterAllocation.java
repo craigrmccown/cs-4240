@@ -23,7 +23,7 @@ public class RegisterAllocation {
     private HashSet<EbbTuple> AllEbbs = new HashSet<EbbTuple>();
 
 
-    public static List<IntermediateCode> naive(List<IntermediateCode> ir, Map<String, Symbol> symbolTable) {
+    public static List<IntermediateCode> naive(List<IntermediateCode> ir) {
         ArrayList<IntermediateCode> naiveIR = new ArrayList<IntermediateCode>();
 
         for (int i = 0; i < ir.size(); i ++) {
@@ -34,21 +34,8 @@ public class RegisterAllocation {
                 // s[0] is left operand, s[1] is right operand
                 String register;
                 if(!isLiteral(s[1])) { // s[1] is a var
-                    if (symbolTable.get(s[1]).getDataType().equals("fixedpt")) {
-                        register = "$f0";
-                        naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$f0", s[1], ""));
-                        naiveIR.add(new FourAddressCode(IntermediateCode.STR, "$f0", s[0], ""));
-                    } else if (symbolTable.get(s[1]).getDataType().equals("int")) {
-                        register = "$t0";
-                        naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[1], ""));
-                        naiveIR.add(new FourAddressCode(IntermediateCode.STR, "$t0", s[0], ""));
-                    } else {
-                        register = "$t0";
-                        System.out.println("Something went wrong in assign");
-                    }
-
-                    naiveIR.add(new FourAddressCode(IntermediateCode.LDR, register, s[1], ""));
-                    naiveIR.add(new FourAddressCode(IntermediateCode.STR, register, s[0], ""));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.LDR, "$t0", s[1], ""));
+                    naiveIR.add(new FourAddressCode(IntermediateCode.STR, "$t0", s[0], ""));
                 } else {
                     naiveIR.add(new FourAddressCode(IntermediateCode.ADD, "$t0", "$zero", s[1]));
                     naiveIR.add(new FourAddressCode(IntermediateCode.STR, "$t0", s[0], ""));
@@ -149,20 +136,6 @@ public class RegisterAllocation {
 
     public static boolean isLiteral(String varOrLit) {
         return varOrLit.matches("^-?[0-9]*\\.?[0-9]+$");
-    }
-
-    public static boolean isFloat(String floatOrNot) {
-        return floatOrNot.matches("^-?[0-9]*\\.[0-9]+$");
-    }
-
-    public static String resolveDataType(String var, Map<String, Symbol> symbolTable) {
-        Symbol s = symbolTable.get(var);
-
-        if (!s.getDataType().equals("int") && !s.getDataType().equals("fixedpt")) {
-            s = symbolTable.get(s.getDataType());
-        }
-
-        return s.getDataType();
     }
 
     public void cfgConstruction(IRGenerator input) {

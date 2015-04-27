@@ -24,7 +24,7 @@ public class Main {
             semanticChecker.check(tree);
 
             List<IntermediateCode> ir = semanticChecker.getGenerator().getIR();
-            List<IntermediateCode> naiveIR = RegisterAllocation.naive(ir, semanticChecker.getSymbolTable().flatten());
+            List<IntermediateCode> naiveIR = RegisterAllocation.naive(ir);
 
             //System.out.println(MIPSGenerator.generate(naiveIR));
             RegisterAllocation reg = new RegisterAllocation();
