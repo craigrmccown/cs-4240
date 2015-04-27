@@ -379,9 +379,9 @@ public class RegisterAllocation {
         //return input;
     }
 
-    private void ebbConstruction(ArrayList<BasicBlock> bb) {
+    public void ebbConstruction(IRGenerator input) {
+        ArrayList<BasicBlock> bb = getCFGConstruction(input);
         BasicBlock x;
-        HashSet<EbbTuple> s;
         EbbRoots.add(bb.get(0));
         while (!EbbRoots.isEmpty()) {
             x = EbbRoots.iterator().next();
@@ -495,7 +495,7 @@ public class RegisterAllocation {
     }
 
 
-    private class BasicBlock {
+    public class BasicBlock {
         private LinkedList<IntermediateCode> block;
         private ArrayList<BasicBlock> nextBlocks;
         private ArrayList<BasicBlock> prevBlocks;
