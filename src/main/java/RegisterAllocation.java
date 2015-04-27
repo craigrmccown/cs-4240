@@ -2,6 +2,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+private final int NUM_INT_REGISTERS = 27;
+private final int NUM_FP_REGISTERS = 15;
+
 public class RegisterAllocation {
     public static List<IntermediateCode> naive(List<IntermediateCode> ir) {
         ArrayList<IntermediateCode> naiveIR = new ArrayList<IntermediateCode>();
@@ -142,74 +145,106 @@ public class RegisterAllocation {
 
                 if(opcode == IntermediateCode.ASSIGN) {
                     storeVars.add(s[0]);
-                    if(!s[1].matches("^-?[0-9]*\\.?[0-9]+$") && !storeVars.contains(s[1])) {
+                    if(!isLiteral(s[1]) && !storeVars.contains(s[1])) {
                         loadVars.add(s[1]);
                     }
                 } else if(opcode>=IntermediateCode.ADD && opcode<=IntermediateCode.OR) {
-                    if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$") && !s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //both vars
-                        if(s[0].equals(s[2]) && s[1].equals(s[2])) { //ex: a = a+a
+                    if(!isLiteral(s[0]) && !isLiteral(s[1])) { //both vars
+                        if(s[0].equals(s[2]) && s[1].equals(s[2]) && !storeVars.contains(s[0])) { //ex: a = a+a
                             loadStoreVars.add(s[2]);
                         } else if(s[0].equals(s[2]) && !s[1].equals(s[2])) { //ex: a = a+b
-                            loadStoreVars.add(s[2]);
-                            loadVars.add(s[1]);
+                            if(!storeVars.contains(s[2])) {
+                                loadStoreVars.add(s[2]);
+                            }
+                            if(!storeVars.contains(s[1]) && !loadVars.contains(s[1])) {
+                                loadVars.add(s[1]);
+                            }
                         } else if(!s[0].equals(s[2]) && s[1].equals(s[2])) { //ex: a = b+a
-                            loadStoreVars.add(s[2]);
-                            loadVars.add(s[0]);
+                            if(!storeVars.contains(s[2])) {
+                                loadStoreVars.add(s[2]);
+                            }
+                            if(!storeVars.contains(s[0]) && !loadVars.contains(s[0])) {
+                                loadVars.add(s[0]);
+                            }
                         } else { //ex: a = b+c
-                            loadVars.add(s[0]);
-                            loadVars.add(s[1]);
-                            storeVars.add(s[2]);
+                            if(!storeVars.contains(s[0]) && !loadVars.contains(s[0])) {
+                                loadVars.add(s[0]);
+                            }
+                            if(!storeVars.contains(s[1]) && !loadVars.contains(s[1])) {
+                                loadVars.add(s[1]);
+                            }
+                            if(!storeVars.contains(s[2])) {
+                                storeVars.add(s[2]);
+                            }
                         }
-                    } else if(s[0].matches("^-?[0-9]*\\.?[0-9]+$") && !s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //s[0] = num, s[1] = var
+                    } else if(isLiteral(s[0]) && !isLiteral(s[1])) { //s[0] = num, s[1] = var
                         if(s[1].equals(s[2])) { //ex: a = 3+a
                             loadStoreVars.add(s[2]);
                         } else { //ex: a = 3+b
-                            loadVars.add(s[1]);
-                            storeVars.add(s[2]);
+                            if(!storeVars.contains(s[1]) && !loadVars.contains(s[1])) {
+                                loadVars.add(s[1]);
+                            }
+                            if(!storeVars.contains(s[2])) {
+                                storeVars.add(s[2]);
+                            }
                         }
-                    } else if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$") && s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //s[0] = var, s[1] = num
+                    } else if(!isLiteral(s[0]) && isLiteral(s[1])) { //s[0] = var, s[1] = num
                         if(s[0].equals(s[2])) { //ex: a = a+3
                             loadStoreVars.add(s[2]);
                         } else { //ex: a = b+3
-                            loadVars.add(s[0]);
+                            if(!storeVars.contains(s[0]) && !loadVars.contains(s[0])){
+                                loadVars.add(s[0]);
+                            }
+                            if(!storeVars.contains(s[2])) {
+                                storeVars.add(s[2]);
+                            }
+                        }
+                    } else if(isLiteral(s[0]) && isLiteral(s[1])) { //both nums
+                        //ex: a = 3+5
+                        if(storeVars.contains(s[2])) {
                             storeVars.add(s[2]);
                         }
-                    } else if(s[0].matches("^-?[0-9]*\\.?[0-9]+$") && s[1].matches("^-?[0-9]*\\.?[0-9]+$")) { //both nums
-                        //ex: a = 3+5
-                        storeVars.add(s[2]);
                     }
                 } else if(opcode >= IntermediateCode.BREQ && opcode <= IntermediateCode.BRGEQ) {
-                    if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$")) {
+                    if(!isLiteral(s[0]) && !storeVars.contains(s[0]) && !loadVars.contains(s[0])) {
                         loadVars.add(s[0]);
                     }
-                    if(!s[1].matches("^-?[0-9]*\\.?[0-9]+$")) {
+                    if(!isLiteral(s[1]) && !storeVars.contains(s[1]) && !loadVars.contains(s[1])) {
                         loadVars.add(s[1]);
                     }
                 } else if(opcode == IntermediateCode.RETURN) {
                     if(s[0].length() > 0) { //param in the 1st
-                        if(!s[0].matches("^-?[0-9]*\\.?[0-9]+$")) { //it is a variable
+                        if(!isLiteral(s[0]) && !storeVars.contains(s[0]) && !loadVars.contains(s[0])) { //it is a variable
                             loadVars.add(s[0]);
                         }
                     }
                 } else if(opcode == IntermediateCode.CALL || opcode == IntermediateCode.CALLR) {
                     int numParams = s.length;
                     for(int k = 0; k<numParams; k++) {
-                        if(!s[k].matches("^-?[0-9]*\\.?[0-9]+$")) { //not a number
+                        if(!isLiteral(s[k]) && !storeVars.contains(s[k]) && !loadVars.contains(s[k])) { //not a number
                             loadVars.add(s[k]);
                         }
                     }
                     String retAddress = code.get(j).getRetAddress();
-                    if(opcode == IntermediateCode.CALLR && retAddress.length() > 0) {
+                    if(opcode == IntermediateCode.CALLR && retAddress.length() > 0 && !storeVars.contains(retAddress)) {
                         storeVars.add(retAddress);
                     }
                 } else if(opcode == IntermediateCode.ARRAY_STORE) {
                     //arr[#] = a
-                    if(!s[2].matches("^-?[0-9]*\\.?[0-9]+$")) {
+                    if(!isLiteral(s[1]) && !storeVars.contains(s[1]) && !loadVars.contains(s[1])) {
+                        loadVars.add(s[1]);
+                    }
+                    if(!isLiteral(s[2]) && !storeVars.contains(s[2]) && !loadVars.contains(s[2])) {
                         loadVars.add(s[2]);
                     }
                 } else if(opcode == IntermediateCode.ARRAY_LOAD) {
                     //a = arr[#]
-                    storeVars.add(s[0]);
+                    if(!isLiteral(s[2]) && !loadVars.contains(s[2]) && !storeVars.contains(s[2])) {
+                        loadVars.add(s[2]);
+                    }
+                    if(!storeVars.contains(s[0])) {
+                        storeVars.add(s[0]);
+                    }
                 } else if(opcode == IntermediateCode.ARRAY_ASSIGN) {
                     //not sure if anything needs to be done
                 }
@@ -237,6 +272,8 @@ public class RegisterAllocation {
                 }
             }
 
+            //removing duplicates from 
+
             System.out.println("Block "+i);
             System.out.println("Load vars");
             for(int n = 0; n<loadVars.size(); n++) {
@@ -250,7 +287,7 @@ public class RegisterAllocation {
             }
             System.out.println();
 
-            System.out.println("store vars");
+            System.out.println("Store vars");
             for(int n = 0; n<storeVars.size(); n++) {
                 System.out.println("    "+storeVars.get(n));
             }
@@ -261,7 +298,7 @@ public class RegisterAllocation {
                 //can't use $zero, $k0 and $k1 so we are left with 29 available registers
                 //1-25, 28-31
                 String orig;
-                int num = 1;
+                int num = 0;
 
                 
 
@@ -338,6 +375,8 @@ public class RegisterAllocation {
                 }
             } else {
                 //need to calculate lowest spill costs
+
+
 
             }
         }
@@ -449,6 +488,65 @@ public class RegisterAllocation {
         return arr;
     }
 
+    public static String getNextIntegerRegister(int numUsed) {
+        String[] array = new String[NUM_INT_REGISTERS];
+        array[0] = "$t0";
+        array[1] = "$t1";
+        array[2] = "$t2";
+        array[3] = "$t3";
+        array[4] = "$t4";
+        array[5] = "$t5";
+        array[6] = "$t6";
+        array[7] = "$t7";
+        array[8] = "$t8";
+        array[9] = "$t9";
+
+        array[10] = "$s0";
+        array[11] = "$s1";
+        array[12] = "$s2";
+        array[13] = "$s3";
+        array[14] = "$s4";
+        array[15] = "$s5";
+        array[16] = "$s6";
+        array[17] = "$s7";
+
+        array[18] = "$a1";
+        array[19] = "$a2";
+        array[20] = "$a3";
+
+        array[21] = "$at";
+
+        array[22] = "$v1";
+
+        array[23] = "$gp";
+        array[24] = "$sp";
+        array[25] = "$fp";
+        array[26] = "$ra";
+
+        return array[numUsed];
+    }
+
+    public static String getNextFloatRegister(int numUsed) {
+        String[] array = new String[NUM_FP_REGISTERS];
+        array[0] = "$f0";
+        array[1] = "$f1";
+        array[2] = "$f2";
+        array[3] = "$f3";
+        array[4] = "$f4";
+        array[5] = "$f5";
+        array[6] = "$f6";
+        array[7] = "$f7";
+        array[8] = "$f8";
+        array[9] = "$f9";
+        array[10] = "$f10";
+        array[11] = "$f11";
+        array[12] = "$f13";
+        array[13] = "$f14";
+        array[14] = "$f15";
+
+        return array[numUsed];
+    }
+
 
     private class BasicBlock {
         private LinkedList<IntermediateCode> block;
@@ -541,22 +639,4 @@ public class RegisterAllocation {
             return allBlocks;
         }
     }
-
-    /*private class Block {
-        private int start;
-        private int end;
-
-        public Block(int start, int end) {
-            this.start = start;
-            this.end = end;
-        }
-
-        public int getStart() {
-            return start;
-        }
-
-        public int getEnd() {
-            return end;
-        }
-    }*/
 }
