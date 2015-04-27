@@ -311,6 +311,10 @@ public class RegisterAllocation {
             }
             System.out.println();
 
+            arr.get(i).setLoadVars(loadVars);
+            arr.get(i).setStoreVars(storeVars);
+            arr.get(i).setLoadStoreVars(loadStoreVars);
+
             //
             if(loadVars.size() + storeVars.size() + loadStoreVars.size() <= 29) {
                 //can't use $zero, $k0 and $k1 so we are left with 29 available registers
@@ -395,7 +399,7 @@ public class RegisterAllocation {
             System.out.println("Basic Block " + i + ":");
             System.out.println("    Start: "+ arr.get(i).getStart());
             System.out.println("    End: " + arr.get(i).getEnd());
-            LinkedList<IntermediateCode> list = arr.get(i).getBlockCode();
+            LinkedList<IntermediateCode> list = arr.get(i).getEditedBlockCode();
             for(int j = 0; j<list.size(); j++) {
                 System.out.println("        "+ list.get(j).toString());
             }
@@ -629,6 +633,7 @@ public class RegisterAllocation {
 
     public class BasicBlock {
         private LinkedList<IntermediateCode> block;
+        private LinkedList<IntermediateCode> editedBlock;
         private ArrayList<BasicBlock> nextBlocks;
         private ArrayList<BasicBlock> prevBlocks;
         int start;
@@ -641,8 +646,12 @@ public class RegisterAllocation {
             this.start = start;
             this.end = end;
             this.block = block;
+            editedBlock = block;
             nextBlocks = new ArrayList<BasicBlock>();
             prevBlocks = new ArrayList<BasicBlock>();
+            loadVars = new ArrayList<String>();
+            storeVars = new ArrayList<String>();
+            loadStoreVars = new ArrayList<String>();
         }
 
         public BasicBlock(int start, int end) {
@@ -650,14 +659,22 @@ public class RegisterAllocation {
             this.end = end;
             nextBlocks = new ArrayList<BasicBlock>();
             prevBlocks = new ArrayList<BasicBlock>();
+            loadVars = new ArrayList<String>();
+            storeVars = new ArrayList<String>();
+            loadStoreVars = new ArrayList<String>();
         }
 
         public void setBlockCode(LinkedList<IntermediateCode> blockCode) {
             block = blockCode;
+            editedBlock = blockCode;
         }
 
         public LinkedList<IntermediateCode> getBlockCode() {
             return block;
+        }
+
+        public LinkedList<IntermediateCode> getEditedBlockCode() {
+            return editedBlock;
         }
 
         public void addNext(BasicBlock next) {
@@ -699,11 +716,11 @@ public class RegisterAllocation {
         }
 
         public void addCode(int index, IntermediateCode code) {
-            block.add(index, code);
+            editedBlock.add(index, code);
         }
 
         public void addCode(IntermediateCode code) {
-            block.add(code);
+            editedBlock.add(code);
         }
 
         public ArrayList<BasicBlock> getNextBlocks() {
