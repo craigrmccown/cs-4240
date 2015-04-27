@@ -2,12 +2,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;\
+import java.util.Map;
 
 public class RegisterAllocation {
-    private final int NUM_INT_REGISTERS = 27;
-    private final int NUM_FP_REGISTERS = 15;
+    private static final int NUM_INT_REGISTERS = 27;
+    private static final int NUM_FP_REGISTERS = 15;
     //don't judge
+
     private class EbbTuple {
         public BasicBlock root;
         public HashSet<BasicBlock> blocks;
@@ -192,7 +193,7 @@ public class RegisterAllocation {
                     if(!isLiteral(s[1]) && !storeVars.contains(s[1])) {
                         loadVars.add(s[1]);
                     }
-                } else if(opcode>=IntermediateCode.ADD && opcode<=IntermediateCode.OR) {
+                } else if(opcode>=IntermediateCode.ADD && opcode <=IntermediateCode.OR) {
                     if(!isLiteral(s[0]) && !isLiteral(s[1])) { //both vars
                         if(s[0].equals(s[2]) && s[1].equals(s[2]) && !storeVars.contains(s[0])) { //ex: a = a+a
                             loadStoreVars.add(s[2]);
@@ -364,11 +365,11 @@ public class RegisterAllocation {
 
                 for(int j = 0; j<loadVars.size(); j++) {
                     orig = loadVars.get(j);
-                    arr.get(i).replaceVariable(orig, getNextIntegerRegister(num);
+                    arr.get(i).replaceVariable(orig, getNextIntegerRegister(num));
                     if(labelStarted) {
                         arr.get(i).addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num), orig, ""));
                     } else {
-                        arr.get(i).addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num, orig, ""));
+                        arr.get(i).addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num), orig, ""));
                     }
 
                     num++;
@@ -376,11 +377,11 @@ public class RegisterAllocation {
 
                 for(int j = 0; j<loadStoreVars.size(); j++) {
                     orig = loadStoreVars.get(j);
-                    arr.get(i).replaceVariable(orig, getNextIntegerRegister(num);
+                    arr.get(i).replaceVariable(orig, getNextIntegerRegister(num));
                     if(labelStarted) {
-                        arr.get(i).addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num, orig, ""));
+                        arr.get(i).addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num), orig, ""));
                     } else {
-                        arr.get(i).addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num, orig, ""));
+                        arr.get(i).addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(num), orig, ""));
                     }
 
 
@@ -621,7 +622,7 @@ public class RegisterAllocation {
                 count++;
             } else if(opcode >= IntermediateCode.BREQ && opcode <= IntermediateCode.BRGEQ && (s[0].equals(variable) || s[1].equals(variable))) {
                 count++;
-            } else if(opcode>=IntermediateCode.ADD && opcode<=IntermediateCode.OR &&) {
+            } else if(opcode>=IntermediateCode.ADD && opcode<=IntermediateCode.OR) {
                 if((s[0].equals(variable) || s[1].equals(variable))) {
                     count++;
                 }
@@ -649,6 +650,7 @@ public class RegisterAllocation {
                 }
             }
         }
+        return count;
     }
 
 
@@ -746,15 +748,15 @@ public class RegisterAllocation {
             return allBlocks;
         }
 
-        public ArrayList<String> setLoadVars(ArrayList<String> loadVars) {
+        public void setLoadVars(ArrayList<String> loadVars) {
             this.loadVars = loadVars;
         }
 
-        public ArrayList<String> setLoadVars(ArrayList<String> storeVars) {
+        public void setStoreVars(ArrayList<String> storeVars) {
             this.storeVars = storeVars;
         }
 
-        public ArrayList<String> setLoadVars(ArrayList<String> loadStoreVars) {
+        public void setLoadStoreVars(ArrayList<String> loadStoreVars) {
             this.loadStoreVars = loadStoreVars;
         }
     }
