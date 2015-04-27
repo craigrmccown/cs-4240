@@ -4,8 +4,6 @@ import java.util.List;
 public class MIPSGenerator {
     static HashMap<String, String> data = new HashMap<String, String>();
 
-    // TODO handle floating point
-    // TODO syscalls
     static String generate(List<IntermediateCode> ir) {
         String dataBlock, textBlock;
         dataBlock = textBlock = "";
@@ -79,6 +77,9 @@ public class MIPSGenerator {
                     if (params[1].equals("func_printi__0")) {
                         textBlock += "li $v0, 1\n";
                         textBlock += "add $a0, $zero, " + params[0] + "\n";
+                        textBlock += "syscall\n";
+                    } else if (params[1].equals("func_readi__0")) {
+                        textBlock += "li $v0, 5\n";
                         textBlock += "syscall\n";
                     }
                     break;
