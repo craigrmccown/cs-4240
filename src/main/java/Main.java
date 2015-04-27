@@ -29,6 +29,8 @@ public class Main {
             
             RegisterAllocation reg = new RegisterAllocation();
             List<IntermediateCode> cfgIR = reg.cfgConstruction(semanticChecker.getGenerator());
+            //System.out.println(MIPSGenerator.generate(cfgIR));
+            List<IntermediateCode> cfgIREbb = reg.getIRfromEbb(semanticChecker.getGenerator());
             System.out.println(MIPSGenerator.generate(cfgIR));
         } catch (IOException e) {
             System.out.println("failed to read input file");

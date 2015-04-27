@@ -602,6 +602,8 @@ public class RegisterAllocation {
             HashSet<String> loadMap = new HashSet<String>();
             HashSet<String> loadStoreMap = new HashSet<String>();
             HashSet<String> storeMap = new HashSet<String>();
+            HashMap<String, Integer> LoadRegisters = new HashMap<String, Integer>();
+
 
             for (BasicBlock block : tuple.blocks) {
                 for (String varName: block.loadVars) {
@@ -616,14 +618,17 @@ public class RegisterAllocation {
             }
             int count = 0;
             for (String s : loadMap) {
+                LoadRegisters.put(s, count);
                 if(tuple.root.getBlockCode().get(0).getOpcode() == -1)
+
                     tuple.root.addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(count), s, ""));
                 else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(count), s, ""));
+                count++;
             }
             for (String s : loadStoreMap) {
                 if(tuple.root.getBlockCode().get(0).getOpcode() == -1)
-                    tuple.root.addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(count), s, ""));
-                else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(count), s, ""));
+                    tuple.root.addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(LoadRegisters.get(s)), s, ""));
+                else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(LoadRegisters.get(s)), s, ""));
             }
 
             for (BasicBlock block : tuple.blocks) {
