@@ -301,7 +301,14 @@ public class RegisterAllocation {
                 String orig;
                 int num = 0;
 
-                
+                for(int j = 0; j<code.size(); j++) {
+                    if(code.get(j).getOpcode() == IntermediateCode.ARRAY_STORE) {
+                        String[] s = code.get(j).getParams();
+                        code.get(j).changeParam(0, getNextIntegerRegister(num)+"|"+s[0]);
+                        num++;
+                        System.out.println(code.get(j).toString());
+                    }
+                }
 
                 //make sure the loads and stores are after labels
                 // and before branches
@@ -362,6 +369,8 @@ public class RegisterAllocation {
 
                     num++;
                 }
+
+
             } else {
                 //need to calculate lowest spill costs
 
