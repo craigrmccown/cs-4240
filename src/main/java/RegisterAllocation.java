@@ -306,7 +306,7 @@ public class RegisterAllocation {
                         String[] s = code.get(j).getParams();
                         code.get(j).changeParam(0, getNextIntegerRegister(num)+"|"+s[0]);
                         num++;
-                        System.out.println(code.get(j).toString());
+                        //System.out.println(code.get(j).toString());
                     }
                 }
 
