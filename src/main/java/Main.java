@@ -22,16 +22,18 @@ public class Main {
             List<IntermediateCode> ir = semanticChecker.getGenerator().getIR();
 
             if (args[1].equals("naive")) {
+                RegisterAllocation reg = new RegisterAllocation();
                 List<IntermediateCode> naiveIR = RegisterAllocation.naive(ir);
                 System.out.println(MIPSGenerator.generate(naiveIR));
             } else if (args[1].equals("cfg")) {
 
             } else if (args[1].equals("ebb")) {
-
+                RegisterAllocation reg = new RegisterAllocation();
+                List<IntermediateCode> cfgIREbb = reg.getIRfromEbb(semanticChecker.getGenerator());
+                System.out.println(MIPSGenerator.generate(cfgIREbb));
             } else {
                 System.out.println("Please pass one of these three options as the second argument: 'naive', 'cfg', 'ebb'");
             }
-
         } catch (IOException e) {
             System.out.println("failed to read input file");
             System.exit(1);

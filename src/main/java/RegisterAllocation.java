@@ -1,8 +1,4 @@
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class RegisterAllocation {
     private static final int NUM_INT_REGISTERS = 27;
@@ -138,7 +134,7 @@ public class RegisterAllocation {
         return varOrLit.matches("^-?[0-9]*\\.?[0-9]+$");
     }
 
-    public void cfgConstruction(IRGenerator input) {
+    public LinkedList<IntermediateCode> cfgConstruction(IRGenerator input) {
         //ArrayList<IntermediateCode> cfgIR = new ArrayList<IntermediateCode>();
         RegisterAllocation reg = new RegisterAllocation();
         ArrayList<BasicBlock> arr = reg.getCFGConstruction(input);
@@ -290,26 +286,9 @@ public class RegisterAllocation {
                 }
             }
 
-            //removing duplicates from 
-
-            System.out.println("Block "+i);
-            System.out.println("Load vars");
-            for(int n = 0; n<loadVars.size(); n++) {
-                System.out.println("    "+loadVars.get(n));
-            }
-            System.out.println();
-
-            System.out.println("Load Store Vars");
-            for(int n = 0; n<loadStoreVars.size(); n++) {
-                System.out.println("    "+loadStoreVars.get(n));
-            }
-            System.out.println();
-
-            System.out.println("Store vars");
-            for(int n = 0; n<storeVars.size(); n++) {
-                System.out.println("    "+storeVars.get(n));
-            }
-            System.out.println();
+            arr.get(i).setLoadVars(loadVars);
+            arr.get(i).setStoreVars(storeVars);
+            arr.get(i).setLoadStoreVars(loadStoreVars);
 
             //
             if(loadVars.size() + storeVars.size() + loadStoreVars.size() <= 29) {
@@ -318,7 +297,14 @@ public class RegisterAllocation {
                 String orig;
                 int num = 0;
 
-                
+                for(int j = 0; j<code.size(); j++) {
+                    if(code.get(j).getOpcode() == IntermediateCode.ARRAY_STORE) {
+                        String[] s = code.get(j).getParams();
+                        code.get(j).changeParam(0, getNextIntegerRegister(num)+"|"+s[0]);
+                        num++;
+                        //System.out.println(code.get(j).toString());
+                    }
+                }
 
                 //make sure the loads and stores are after labels
                 // and before branches
@@ -377,12 +363,10 @@ public class RegisterAllocation {
                         arr.get(i).addCode(new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(num), orig, ""));
                     }
 
-                    if(num==25) {
-                        num=28;
-                    } else {
-                        num++;
-                    }
+                    num++;
                 }
+
+
             } else {
                 //need to calculate lowest spill costs
 
@@ -390,28 +374,22 @@ public class RegisterAllocation {
 
             }
         }
-        
+
+        LinkedList<IntermediateCode> temp;
+        LinkedList<IntermediateCode> list = new LinkedList<IntermediateCode>();
         for(int i = 0; i<arr.size(); i++) {
-            System.out.println("Basic Block " + i + ":");
-            System.out.println("    Start: "+ arr.get(i).getStart());
-            System.out.println("    End: " + arr.get(i).getEnd());
-            LinkedList<IntermediateCode> list = arr.get(i).getBlockCode();
-            for(int j = 0; j<list.size(); j++) {
-                System.out.println("        "+ list.get(j).toString());
+            temp = arr.get(i).getEditedBlockCode();
+            for(int j = 0; j<temp.size(); j++) {
+                list.add(temp.get(j));
             }
-            
-            ArrayList<BasicBlock> arrlist = arr.get(i).getNextBlocks();
-            for(int k = 0; k<arrlist.size(); k++) {
-                System.out.println("            Start: " + arrlist.get(k).getStart());
-                System.out.println("            End: "+ arrlist.get(k).getEnd());
-            }
+
         }
 
-
+        return list;
         //return input;
     }
 
-    public void ebbConstruction(IRGenerator input) {
+    public List<BasicBlock> ebbConstruction(IRGenerator input) {
         ArrayList<BasicBlock> bb = getCFGConstruction(input);
         BasicBlock x;
         EbbRoots.add(bb.get(0));
@@ -426,6 +404,7 @@ public class RegisterAllocation {
                 AllEbbs.add(buildEbb(x));
             }
         }
+        return bb;
     }
 
     private EbbTuple buildEbb(BasicBlock root) {
@@ -585,7 +564,7 @@ public class RegisterAllocation {
         return array[numUsed];
     }
 
-    public int getSpillCost(BasicBlock block, String variable) {
+    public static int getSpillCost(BasicBlock block, String variable) {
         LinkedList<IntermediateCode> code = block.getBlockCode();
         int count = 0;
         for(int i = 0; i<code.size(); i++) {
@@ -626,9 +605,93 @@ public class RegisterAllocation {
         return count;
     }
 
+    public List<IntermediateCode> getIRfromEbb(IRGenerator input) {
+        List<BasicBlock> bb = ebbConstruction(input);
+        for (EbbTuple tuple : AllEbbs) {
+            HashSet<String> loadMap = new HashSet<String>();
+            HashSet<String> loadStoreMap = new HashSet<String>();
+            HashSet<String> storeMap = new HashSet<String>();
+            HashMap<String, Integer> LoadRegisters = new HashMap<String, Integer>();
+
+
+            for (BasicBlock block : tuple.blocks) {
+                for (String varName: block.loadVars) {
+                    loadMap.add(varName);
+                }
+                for (String varName: block.loadStoreVars) {
+                    loadStoreMap.add(varName);
+                }
+                for (String varName: block.storeVars) {
+                    storeMap.add(varName);
+                }
+            }
+            int count = 0;
+            for (String s : loadMap) {
+                LoadRegisters.put(s, count);
+                if(tuple.root.getBlockCode().get(0).getOpcode() == -1)
+
+                    tuple.root.addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(count), s, ""));
+                else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(count), s, ""));
+                count++;
+            }
+            for (String s : loadStoreMap) {
+                if(tuple.root.getBlockCode().get(0).getOpcode() == -1)
+                    tuple.root.addCode(1, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(LoadRegisters.get(s)), s, ""));
+                else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.LDR, getNextIntegerRegister(LoadRegisters.get(s)), s, ""));
+            }
+
+            for (BasicBlock block : tuple.blocks) {
+                boolean finalBlock = false;
+                for (BasicBlock next : block.getNextBlocks()) {
+                    if (!tuple.blocks.contains(next)) {
+                        finalBlock = true;
+                    }
+                }
+                if (finalBlock) {
+                    for (String s : storeMap) {
+                        if(tuple.root.getBlockCode().get(0).getOpcode() == -1)
+                            tuple.root.addCode(1, new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(count), s, ""));
+                        else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(count), s, ""));
+                    }
+                    for (String s : loadStoreMap) {
+                        if(tuple.root.getBlockCode().get(0).getOpcode() == -1)
+                            tuple.root.addCode(1, new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(count), s, ""));
+                        else tuple.root.addCode(0, new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(count), s, ""));
+                    }
+                }
+            }
+        }
+        LinkedList<IntermediateCode> temp;
+        LinkedList<IntermediateCode> list = new LinkedList<IntermediateCode>();
+        for(BasicBlock b : bb) {
+            temp = b.getEditedBlockCode();
+            for(int j = 0; j<temp.size(); j++) {
+                list.add(temp.get(j));
+            }
+
+        }
+
+        return list;
+    }
+
+    /*public static ArrayList<String> getLowestSpillCosts(BasicBlock block, ArrayList<String> vars, int numLowest) {
+        ArrayList<String> returnList = new ArrayList<String>();
+        int lowest = getSpillCost(block, vars.get(0));
+        for(int i = 0; i<numLowest; i++) {
+            for(int j = 0; j<vars.size(); j++) {
+                if(getSpillCost(block,vars.get(j)) < lowest && !returnList.contains(vars.get(j))) {
+                    lowest = 
+                }
+            }
+        }
+
+        return returnList;
+    }*/
+
 
     public class BasicBlock {
         private LinkedList<IntermediateCode> block;
+        private LinkedList<IntermediateCode> editedBlock;
         private ArrayList<BasicBlock> nextBlocks;
         private ArrayList<BasicBlock> prevBlocks;
         int start;
@@ -641,8 +704,12 @@ public class RegisterAllocation {
             this.start = start;
             this.end = end;
             this.block = block;
+            editedBlock = block;
             nextBlocks = new ArrayList<BasicBlock>();
             prevBlocks = new ArrayList<BasicBlock>();
+            loadVars = new ArrayList<String>();
+            storeVars = new ArrayList<String>();
+            loadStoreVars = new ArrayList<String>();
         }
 
         public BasicBlock(int start, int end) {
@@ -650,14 +717,22 @@ public class RegisterAllocation {
             this.end = end;
             nextBlocks = new ArrayList<BasicBlock>();
             prevBlocks = new ArrayList<BasicBlock>();
+            loadVars = new ArrayList<String>();
+            storeVars = new ArrayList<String>();
+            loadStoreVars = new ArrayList<String>();
         }
 
         public void setBlockCode(LinkedList<IntermediateCode> blockCode) {
             block = blockCode;
+            editedBlock = blockCode;
         }
 
         public LinkedList<IntermediateCode> getBlockCode() {
             return block;
+        }
+
+        public LinkedList<IntermediateCode> getEditedBlockCode() {
+            return editedBlock;
         }
 
         public void addNext(BasicBlock next) {
@@ -699,11 +774,11 @@ public class RegisterAllocation {
         }
 
         public void addCode(int index, IntermediateCode code) {
-            block.add(index, code);
+            editedBlock.add(index, code);
         }
 
         public void addCode(IntermediateCode code) {
-            block.add(code);
+            editedBlock.add(code);
         }
 
         public ArrayList<BasicBlock> getNextBlocks() {
