@@ -4,11 +4,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-private final int NUM_INT_REGISTERS = 27;
-private final int NUM_FP_REGISTERS = 15;
-
 public class RegisterAllocation {
     //don't judge
+    private static final int NUM_INT_REGISTERS = 27;
+    private static final int NUM_FP_REGISTERS = 15;
+
     private class EbbTuple {
         public BasicBlock root;
         public HashSet<BasicBlock> blocks;
@@ -193,7 +193,7 @@ public class RegisterAllocation {
                     if(!isLiteral(s[1]) && !storeVars.contains(s[1])) {
                         loadVars.add(s[1]);
                     }
-                } else if(opcode>=IntermediateCode.ADD && opcode<=IntermediateCode.OR) {
+                } else if(opcode>=IntermediateCode.ADD && opcode <=IntermediateCode.OR) {
                     if(!isLiteral(s[0]) && !isLiteral(s[1])) { //both vars
                         if(s[0].equals(s[2]) && s[1].equals(s[2]) && !storeVars.contains(s[0])) { //ex: a = a+a
                             loadStoreVars.add(s[2]);
