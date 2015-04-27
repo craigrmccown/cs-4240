@@ -1,8 +1,25 @@
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
 public class RegisterAllocation {
+
+    //don't judge
+    private class EbbTuple {
+        public BasicBlock root;
+        public HashSet<BasicBlock> blocks;
+
+        public EbbTuple(BasicBlock root, HashSet<BasicBlock> blocks) {
+            this.root = root;
+            this.blocks = blocks;
+        }
+    }
+
+    private HashSet<BasicBlock> EbbRoots = new HashSet<BasicBlock>();
+    private HashSet<EbbTuple> AllEbbs = new HashSet<EbbTuple>();
+
+
     public static List<IntermediateCode> naive(List<IntermediateCode> ir) {
         ArrayList<IntermediateCode> naiveIR = new ArrayList<IntermediateCode>();
 
@@ -422,8 +439,36 @@ public class RegisterAllocation {
         //return input;
     }
 
-    public void ebbConstruction(IRGenerator input) {
-        
+    private void ebbConstruction(ArrayList<BasicBlock> bb) {
+        BasicBlock x;
+        HashSet<EbbTuple> s;
+        EbbRoots.add(bb.get(0));
+        while (!EbbRoots.isEmpty()) {
+            x = EbbRoots.iterator().next();
+            EbbRoots.remove(x);
+            boolean containsX = false;
+            for (EbbTuple tuple : AllEbbs) {
+                if (tuple.root == x) containsX = true;
+            }
+            if (!containsX) {
+                AllEbbs.add(buildEbb(x));
+            }
+        }
+    }
+
+    private EbbTuple buildEbb(BasicBlock root) {
+        HashSet<BasicBlock> ebb = new HashSet<BasicBlock>();
+        AddBbs(root, ebb);
+        return new EbbTuple(root, ebb) ;
+    }
+
+    private void AddBbs(BasicBlock root, HashSet<BasicBlock> ebb) {
+        ebb.add(root);
+        for (BasicBlock block : root.getNextBlocks()) {
+            if (block.getPrevBlocks().size() == 1 && !ebb.contains(block))
+                AddBbs(block, ebb);
+            else if (!EbbRoots.contains(block)) EbbRoots.add(block);
+        }
     }
 
 
