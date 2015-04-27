@@ -138,7 +138,7 @@ public class RegisterAllocation {
         return varOrLit.matches("^-?[0-9]*\\.?[0-9]+$");
     }
 
-    public void cfgConstruction(IRGenerator input) {
+    public LinkedList<IntermediateCode> cfgConstruction(IRGenerator input) {
         //ArrayList<IntermediateCode> cfgIR = new ArrayList<IntermediateCode>();
         RegisterAllocation reg = new RegisterAllocation();
         ArrayList<BasicBlock> arr = reg.getCFGConstruction(input);
@@ -290,27 +290,6 @@ public class RegisterAllocation {
                 }
             }
 
-            //removing duplicates from 
-
-            System.out.println("Block "+i);
-            System.out.println("Load vars");
-            for(int n = 0; n<loadVars.size(); n++) {
-                System.out.println("    "+loadVars.get(n));
-            }
-            System.out.println();
-
-            System.out.println("Load Store Vars");
-            for(int n = 0; n<loadStoreVars.size(); n++) {
-                System.out.println("    "+loadStoreVars.get(n));
-            }
-            System.out.println();
-
-            System.out.println("Store vars");
-            for(int n = 0; n<storeVars.size(); n++) {
-                System.out.println("    "+storeVars.get(n));
-            }
-            System.out.println();
-
             arr.get(i).setLoadVars(loadVars);
             arr.get(i).setStoreVars(storeVars);
             arr.get(i).setLoadStoreVars(loadStoreVars);
@@ -381,11 +360,7 @@ public class RegisterAllocation {
                         arr.get(i).addCode(new FourAddressCode(IntermediateCode.STR, getNextIntegerRegister(num), orig, ""));
                     }
 
-                    if(num==25) {
-                        num=28;
-                    } else {
-                        num++;
-                    }
+                    num++;
                 }
             } else {
                 //need to calculate lowest spill costs
@@ -394,24 +369,18 @@ public class RegisterAllocation {
 
             }
         }
-        
+
+        LinkedList<IntermediateCode> temp;
+        LinkedList<IntermediateCode> list = new LinkedList<IntermediateCode>();
         for(int i = 0; i<arr.size(); i++) {
-            System.out.println("Basic Block " + i + ":");
-            System.out.println("    Start: "+ arr.get(i).getStart());
-            System.out.println("    End: " + arr.get(i).getEnd());
-            LinkedList<IntermediateCode> list = arr.get(i).getEditedBlockCode();
-            for(int j = 0; j<list.size(); j++) {
-                System.out.println("        "+ list.get(j).toString());
+            temp = arr.get(i).getEditedBlockCode();
+            for(int j = 0; j<temp.size(); j++) {
+                list.add(temp.get(j));
             }
-            
-            ArrayList<BasicBlock> arrlist = arr.get(i).getNextBlocks();
-            for(int k = 0; k<arrlist.size(); k++) {
-                System.out.println("            Start: " + arrlist.get(k).getStart());
-                System.out.println("            End: "+ arrlist.get(k).getEnd());
-            }
+
         }
 
-
+        return list;
         //return input;
     }
 
@@ -589,7 +558,7 @@ public class RegisterAllocation {
         return array[numUsed];
     }
 
-    public int getSpillCost(BasicBlock block, String variable) {
+    public static int getSpillCost(BasicBlock block, String variable) {
         LinkedList<IntermediateCode> code = block.getBlockCode();
         int count = 0;
         for(int i = 0; i<code.size(); i++) {
@@ -629,6 +598,20 @@ public class RegisterAllocation {
         }
         return count;
     }
+
+    /*public static ArrayList<String> getLowestSpillCosts(BasicBlock block, ArrayList<String> vars, int numLowest) {
+        ArrayList<String> returnList = new ArrayList<String>();
+        int lowest = getSpillCost(block, vars.get(0));
+        for(int i = 0; i<numLowest; i++) {
+            for(int j = 0; j<vars.size(); j++) {
+                if(getSpillCost(block,vars.get(j)) < lowest && !returnList.contains(vars.get(j))) {
+                    lowest = 
+                }
+            }
+        }
+
+        return returnList;
+    }*/
 
 
     public class BasicBlock {
